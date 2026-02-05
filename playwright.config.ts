@@ -14,12 +14,12 @@ export default defineConfig({
   // 测试文件匹配模式
   testMatch: '**/*.spec.ts',
 
-  // 全局超时：每个测试 60 秒
-  timeout: 60_000,
+  // 全局超时：每个测试 120 秒 (考虑 Electron 启动时间)
+  timeout: 120_000,
 
   // expect 超时
   expect: {
-    timeout: 10_000,
+    timeout: 15_000,
   },
 
   // 重试配置：CI 中重试 2 次，本地不重试
