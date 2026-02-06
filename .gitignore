@@ -106,6 +106,10 @@ token.json
 *.keystore
 *.jks
 
+# Test results
 test-results/
 playwright-report/
 artifacts/
+
+# Other
+.cove/
