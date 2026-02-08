@@ -6,6 +6,8 @@ import { spawn } from 'node-pty'
 export interface SpawnPtyOptions {
   cwd: string
   shell?: string
+  command?: string
+  args?: string[]
   cols: number
   rows: number
 }
@@ -15,8 +17,10 @@ export class PtyManager {
 
   public spawnSession(options: SpawnPtyOptions): { sessionId: string; pty: IPty } {
     const sessionId = crypto.randomUUID()
-    const shell = options.shell ?? this.resolveDefaultShell()
-    const pty = spawn(shell, [], {
+    const command = options.command ?? options.shell ?? this.resolveDefaultShell()
+    const args = options.command ? (options.args ?? []) : []
+
+    const pty = spawn(command, args, {
       cols: options.cols,
       rows: options.rows,
       cwd: options.cwd,

@@ -3,6 +3,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { IPC_CHANNELS } from '../shared/constants/ipc'
 import type {
   KillTerminalInput,
+  LaunchAgentInput,
+  LaunchAgentResult,
   ListAgentModelsInput,
   ListAgentModelsResult,
   ResizeTerminalInput,
@@ -56,6 +58,8 @@ const coveApi = {
   agent: {
     listModels: (payload: ListAgentModelsInput): Promise<ListAgentModelsResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.agentListModels, payload),
+    launch: (payload: LaunchAgentInput): Promise<LaunchAgentResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.agentLaunch, payload),
   },
 }
 

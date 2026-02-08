@@ -11,6 +11,7 @@ import {
   type Node,
   type NodeChange,
 } from '@xyflow/react'
+import { resolveAgentModel, type AgentSettings } from '../../settings/agentConfig'
 import { TerminalNode } from './TerminalNode'
 import type { Point, Size, TerminalNodeData } from '../types'
 import {
@@ -23,6 +24,7 @@ interface WorkspaceCanvasProps {
   workspacePath: string
   nodes: Node<TerminalNodeData>[]
   onNodesChange: (nodes: Node<TerminalNodeData>[]) => void
+  agentSettings: AgentSettings
 }
 
 const DEFAULT_SIZE: Size = {
@@ -35,10 +37,23 @@ const MIN_SIZE: Size = {
   height: 220,
 }
 
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  if (typeof error === 'string' && error.length > 0) {
+    return error
+  }
+
+  return 'Unknown error'
+}
+
 function WorkspaceCanvasInner({
   workspacePath,
   nodes,
   onNodesChange,
+  agentSettings,
 }: WorkspaceCanvasProps): JSX.Element {
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -150,6 +165,49 @@ function WorkspaceCanvasInner({
     [reactFlow],
   )
 
+  const createNodeForSession = useCallback(
+    async (sessionId: string, title: string): Promise<boolean> => {
+      if (!contextMenu) {
+        await window.coveApi.pty.kill({ sessionId })
+        return false
+      }
+
+      const desiredPosition = {
+        x: contextMenu.flowX,
+        y: contextMenu.flowY,
+      }
+
+      const nonOverlappingPosition = findNearestFreePosition(desiredPosition, DEFAULT_SIZE, nodes)
+      const canPlace = isPositionAvailable(nonOverlappingPosition, DEFAULT_SIZE, nodes)
+
+      if (!canPlace) {
+        await window.coveApi.pty.kill({ sessionId })
+        setContextMenu(null)
+        window.alert('当前视图附近没有可用空位，请先移动或关闭部分终端窗口。')
+        return false
+      }
+
+      const nextNode: Node<TerminalNodeData> = {
+        id: crypto.randomUUID(),
+        type: 'terminalNode',
+        position: nonOverlappingPosition,
+        data: {
+          sessionId,
+          title,
+          width: DEFAULT_SIZE.width,
+          height: DEFAULT_SIZE.height,
+        },
+        draggable: true,
+        selectable: true,
+      }
+
+      onNodesChange([...nodes, nextNode])
+      setContextMenu(null)
+      return true
+    },
+    [contextMenu, nodes, onNodesChange],
+  )
+
   const createTerminalNode = useCallback(async () => {
     if (!contextMenu) {
       return
@@ -161,40 +219,50 @@ function WorkspaceCanvasInner({
       rows: 24,
     })
 
-    const newNodeId = crypto.randomUUID()
-    const desiredPosition = {
-      x: contextMenu.flowX,
-      y: contextMenu.flowY,
-    }
+    await createNodeForSession(spawned.sessionId, `terminal-${nodes.length + 1}`)
+  }, [contextMenu, createNodeForSession, nodes.length, workspacePath])
 
-    const nonOverlappingPosition = findNearestFreePosition(desiredPosition, DEFAULT_SIZE, nodes)
-    const canPlace = isPositionAvailable(nonOverlappingPosition, DEFAULT_SIZE, nodes)
-
-    if (!canPlace) {
-      await window.coveApi.pty.kill({ sessionId: spawned.sessionId })
-      setContextMenu(null)
-      window.alert('当前视图附近没有可用空位，请先移动或关闭部分终端窗口。')
+  const launchDefaultAgentNode = useCallback(async () => {
+    if (!contextMenu) {
       return
     }
 
-    const nextNode: Node<TerminalNodeData> = {
-      id: newNodeId,
-      type: 'terminalNode',
-      position: nonOverlappingPosition,
-      data: {
-        sessionId: spawned.sessionId,
-        title: `terminal-${nodes.length + 1}`,
-        width: DEFAULT_SIZE.width,
-        height: DEFAULT_SIZE.height,
-      },
-      draggable: true,
-      selectable: true,
+    const provider = agentSettings.defaultProvider
+    const providerLabel = provider === 'codex' ? 'Codex' : 'Claude Code'
+    const prompt = window.prompt(`Run ${providerLabel}\n\n输入任务提示词：`, '')
+
+    if (prompt === null) {
+      setContextMenu(null)
+      return
     }
 
-    const nextNodes = [...nodes, nextNode]
-    onNodesChange(nextNodes)
-    setContextMenu(null)
-  }, [contextMenu, nodes, onNodesChange, workspacePath])
+    const normalizedPrompt = prompt.trim()
+    if (normalizedPrompt.length === 0) {
+      window.alert('任务提示词不能为空。')
+      return
+    }
+
+    const model = resolveAgentModel(agentSettings, provider)
+
+    try {
+      const launched = await window.coveApi.agent.launch({
+        provider,
+        cwd: workspacePath,
+        prompt: normalizedPrompt,
+        model,
+        cols: 80,
+        rows: 24,
+      })
+
+      const titleParts = [provider === 'codex' ? 'codex' : 'claude']
+      titleParts.push(launched.effectiveModel ?? 'default-model')
+
+      await createNodeForSession(launched.sessionId, titleParts.join(' · '))
+    } catch (error) {
+      setContextMenu(null)
+      window.alert(`Agent 启动失败：${toErrorMessage(error)}`)
+    }
+  }, [agentSettings, contextMenu, createNodeForSession, workspacePath])
 
   const applyChanges = useCallback(
     (changes: NodeChange<TerminalNodeData>[]) => {
@@ -288,11 +356,21 @@ function WorkspaceCanvasInner({
         <div className="workspace-context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
           <button
             type="button"
+            data-testid="workspace-context-new-terminal"
             onClick={() => {
               void createTerminalNode()
             }}
           >
             New Terminal
+          </button>
+          <button
+            type="button"
+            data-testid="workspace-context-run-default-agent"
+            onClick={() => {
+              void launchDefaultAgentNode()
+            }}
+          >
+            Run Default Agent
           </button>
         </div>
       ) : null}

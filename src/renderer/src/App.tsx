@@ -305,6 +305,7 @@ function App(): JSX.Element {
               workspacePath={activeWorkspace.path}
               nodes={activeWorkspace.nodes}
               onNodesChange={handleWorkspaceNodesChange}
+              agentSettings={agentSettings}
             />
           ) : (
             <div className="workspace-empty-state">

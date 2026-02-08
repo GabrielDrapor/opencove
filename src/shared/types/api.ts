@@ -60,3 +60,20 @@ export interface ListAgentModelsResult {
   models: AgentModelOption[]
   error: string | null
 }
+
+export interface LaunchAgentInput {
+  provider: AgentProviderId
+  cwd: string
+  prompt: string
+  model?: string | null
+  cols?: number
+  rows?: number
+}
+
+export interface LaunchAgentResult {
+  sessionId: string
+  provider: AgentProviderId
+  command: string
+  args: string[]
+  effectiveModel: string | null
+}

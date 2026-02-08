@@ -7,6 +7,7 @@ export const IPC_CHANNELS = {
   ptyData: 'pty:data',
   ptyExit: 'pty:exit',
   agentListModels: 'agent:list-models',
+  agentLaunch: 'agent:launch',
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
