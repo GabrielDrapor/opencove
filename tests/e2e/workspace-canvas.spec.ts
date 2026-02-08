@@ -12,6 +12,19 @@ const testWorkspacePath = path.resolve(__dirname, '../../')
 const storageKey = 'cove:m0:workspace-state'
 const seededWorkspaceId = 'workspace-seeded'
 
+interface SeedAgentData {
+  provider: 'claude-code' | 'codex'
+  prompt: string
+  model: string | null
+  effectiveModel: string | null
+  launchMode: 'new' | 'resume'
+  resumeSessionId: string | null
+  executionDirectory: string
+  directoryMode: 'workspace' | 'custom'
+  customDirectory: string | null
+  shouldCreateDirectory: boolean
+}
+
 interface SeedNode {
   id: string
   title: string
@@ -21,6 +34,13 @@ interface SeedNode {
   }
   width: number
   height: number
+  kind?: 'terminal' | 'agent'
+  status?: 'running' | 'exited' | 'failed' | 'stopped' | 'restoring' | null
+  startedAt?: string | null
+  endedAt?: string | null
+  exitCode?: number | null
+  lastError?: string | null
+  agent?: SeedAgentData | null
 }
 
 async function launchApp(): Promise<{ electronApp: ElectronApplication; window: Page }> {
@@ -39,7 +59,13 @@ async function launchApp(): Promise<{ electronApp: ElectronApplication; window: 
   return { electronApp, window }
 }
 
-async function clearAndSeedWorkspace(window: Page, nodes: SeedNode[]): Promise<void> {
+async function clearAndSeedWorkspace(
+  window: Page,
+  nodes: SeedNode[],
+  options?: {
+    settings?: unknown
+  },
+): Promise<void> {
   const seededState = {
     activeWorkspaceId: seededWorkspaceId,
     workspaces: [
@@ -50,6 +76,7 @@ async function clearAndSeedWorkspace(window: Page, nodes: SeedNode[]): Promise<v
         nodes,
       },
     ],
+    ...(options?.settings ? { settings: options.settings } : {}),
   }
 
   const trySeed = async (attempt: number): Promise<boolean> => {
@@ -231,11 +258,27 @@ test.describe('Workspace Canvas Interactions', () => {
     }
   })
 
-  test('runs default agent and creates terminal node', async () => {
+  test('runs agent from launcher v2 and creates node', async () => {
     const { electronApp, window } = await launchApp()
 
     try {
-      await clearAndSeedWorkspace(window, [])
+      await clearAndSeedWorkspace(window, [], {
+        settings: {
+          defaultProvider: 'codex',
+          customModelEnabledByProvider: {
+            'claude-code': false,
+            codex: true,
+          },
+          customModelByProvider: {
+            'claude-code': '',
+            codex: 'gpt-5.2-codex',
+          },
+          customModelOptionsByProvider: {
+            'claude-code': [],
+            codex: ['gpt-5.2-codex'],
+          },
+        },
+      })
 
       const pane = window.locator('.workspace-canvas .react-flow__pane')
       await expect(pane).toBeVisible()
@@ -252,6 +295,9 @@ test.describe('Workspace Canvas Interactions', () => {
       const launcher = window.locator('[data-testid="workspace-agent-launcher"]')
       await expect(launcher).toBeVisible()
 
+      await window.locator('[data-testid="workspace-agent-launch-provider"]').selectOption('codex')
+      await window.locator('[data-testid="workspace-agent-launch-model"]').fill('gpt-5.2-codex')
+
       const promptInput = window.locator('[data-testid="workspace-agent-launch-prompt"]')
       await promptInput.fill('Generate implementation plan for API error handling')
 
@@ -259,7 +305,82 @@ test.describe('Workspace Canvas Interactions', () => {
       await submitButton.click()
 
       await expect(window.locator('.terminal-node')).toHaveCount(1)
-      await expect(window.locator('.terminal-node__title').first()).toContainText('default-model')
+      await expect(window.locator('.terminal-node__title').first()).toContainText('gpt-5.2-codex')
+      await expect(window.locator('.workspace-agent-item')).toHaveCount(1)
+    } finally {
+      await electronApp.close()
+    }
+  })
+
+  test('supports agent controls and sidebar navigation', async () => {
+    const { electronApp, window } = await launchApp()
+
+    try {
+      await clearAndSeedWorkspace(window, [
+        {
+          id: 'terminal-nav-node',
+          title: 'terminal-1',
+          position: { x: 120, y: 120 },
+          width: 460,
+          height: 300,
+          kind: 'terminal',
+        },
+        {
+          id: 'agent-nav-node',
+          title: 'codex · gpt-5.2-codex',
+          position: { x: 1400, y: 980 },
+          width: 520,
+          height: 320,
+          kind: 'agent',
+          status: 'running',
+          startedAt: '2026-02-08T15:00:00.000Z',
+          endedAt: null,
+          exitCode: null,
+          lastError: null,
+          agent: {
+            provider: 'codex',
+            prompt: 'Implement resilient retry logic',
+            model: 'gpt-5.2-codex',
+            effectiveModel: 'gpt-5.2-codex',
+            launchMode: 'new',
+            resumeSessionId: '019c3e32-52ff-7b00-94ac-e6c5a56b4aa4',
+            executionDirectory: testWorkspacePath,
+            directoryMode: 'workspace',
+            customDirectory: null,
+            shouldCreateDirectory: false,
+          },
+        },
+      ])
+
+      const agentItem = window.locator('.workspace-agent-item').first()
+      await expect(agentItem).toBeVisible()
+
+      const viewport = window.locator('.react-flow__viewport')
+      const beforeTransform = await viewport.getAttribute('style')
+      await agentItem.click()
+      await window.waitForTimeout(350)
+      const afterTransform = await viewport.getAttribute('style')
+      expect(afterTransform).not.toBe(beforeTransform)
+
+      const agentNode = window
+        .locator('.terminal-node')
+        .filter({ has: window.locator('.terminal-node__title', { hasText: 'codex' }) })
+        .first()
+
+      await expect(agentNode).toBeVisible()
+      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Running')
+
+      await agentNode.locator('.terminal-node__action', { hasText: 'Stop' }).click()
+      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Stopped')
+
+      await agentNode.locator('.terminal-node__action', { hasText: 'Rerun' }).click()
+      await expect(agentNode.locator('.terminal-node__status')).toHaveText(/Restoring|Running/)
+
+      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Running')
+
+      await agentNode.locator('.terminal-node__action', { hasText: 'Resume' }).click()
+      await expect(agentNode.locator('.terminal-node__status')).toHaveText(/Restoring|Running/)
+      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Running')
     } finally {
       await electronApp.close()
     }
