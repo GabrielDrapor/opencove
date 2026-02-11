@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { detectDoneSignalFromSessionLine } from '../../../src/main/infrastructure/session/DoneSignalDetector'
 
 describe('detectDoneSignalFromSessionLine', () => {
-  it('detects DONE from completed claude assistant response', () => {
+  it('detects DONE from claude assistant response with stop reason', () => {
     const line = JSON.stringify({
       type: 'assistant',
       message: {
@@ -19,7 +19,7 @@ describe('detectDoneSignalFromSessionLine', () => {
     expect(detectDoneSignalFromSessionLine('claude-code', line)).toBe(true)
   })
 
-  it('ignores claude streaming chunks without stop reason', () => {
+  it('detects DONE from claude assistant response even when stop reason is null', () => {
     const line = JSON.stringify({
       type: 'assistant',
       message: {
@@ -27,7 +27,24 @@ describe('detectDoneSignalFromSessionLine', () => {
         content: [
           {
             type: 'text',
-            text: 'Partial chunk [[[COVE_DONE]]]',
+            text: 'Task fully completed. [[[COVE_DONE]]]',
+          },
+        ],
+      },
+    })
+
+    expect(detectDoneSignalFromSessionLine('claude-code', line)).toBe(true)
+  })
+
+  it('ignores claude assistant response without DONE marker', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      message: {
+        stop_reason: null,
+        content: [
+          {
+            type: 'text',
+            text: 'Need your confirmation before continuing.',
           },
         ],
       },

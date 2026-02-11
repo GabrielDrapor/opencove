@@ -32,11 +32,6 @@ function detectClaudeDoneSignal(parsed: unknown): boolean {
     return false
   }
 
-  const stopReason = message.stop_reason
-  if (stopReason === null || typeof stopReason === 'undefined') {
-    return false
-  }
-
   const texts = extractTextContentItems(message.content, 'text')
   if (texts.length === 0) {
     return false
