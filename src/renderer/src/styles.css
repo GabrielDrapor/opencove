@@ -480,6 +480,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: -1;
   border: 1px dashed rgba(122, 172, 255, 0.78);
   border-radius: 12px;
   background: rgba(69, 123, 216, 0.12);
@@ -530,6 +531,10 @@ body {
 .workspace-space-region__label-input:focus {
   outline: none;
   box-shadow: 0 0 0 1px rgba(132, 186, 255, 0.32);
+}
+
+.workspace-canvas .react-flow__viewport-portal {
+  z-index: -1;
 }
 
 .workspace-space-switcher {
