@@ -5,6 +5,7 @@ interface BuildTaskTitleCommandInput {
   requirement: string
   model: string | null
   outputFilePath: string
+  availableTags: string[]
 }
 
 export interface TaskTitleCommand {
@@ -34,15 +35,35 @@ function normalizeRequirement(value: string): string {
   return normalized
 }
 
-function buildTaskTitlePrompt(requirement: string): string {
+function normalizeTagOptions(value: string[]): string[] {
+  const normalized: string[] = []
+
+  for (const item of value) {
+    const tag = item.trim()
+    if (tag.length === 0 || normalized.includes(tag)) {
+      continue
+    }
+
+    normalized.push(tag)
+  }
+
+  return normalized
+}
+
+function buildTaskProfilePrompt(requirement: string, availableTags: string[]): string {
+  const tagsText = availableTags.length > 0 ? availableTags.join(', ') : 'feature, bug, refactor'
+
   return [
-    'You are a concise task naming assistant.',
-    'Generate exactly one task title based on the requirement below.',
-    'Rules:',
-    '- Return only one line.',
-    '- No quotes, no numbering, no markdown.',
-    '- Keep the same language as the requirement.',
-    '- Keep it concise (<= 8 English words or <= 16 Chinese characters).',
+    'You are a concise task planning assistant.',
+    'Generate a JSON object for this task requirement.',
+    'Output rules:',
+    '- Return exactly one JSON object. No markdown fence, no extra text.',
+    '- Keys must be: title, priority, tags.',
+    '- title: concise and in same language as requirement.',
+    '- priority: one of low, medium, high, urgent.',
+    '- tags: array of 1-3 tags, and each tag must be selected from available tags only.',
+    '',
+    `Available tags: ${tagsText}`,
     '',
     'Task requirement:',
     requirement,
@@ -52,7 +73,8 @@ function buildTaskTitlePrompt(requirement: string): string {
 export function buildTaskTitleCommand(input: BuildTaskTitleCommandInput): TaskTitleCommand {
   const requirement = normalizeRequirement(input.requirement)
   const effectiveModel = normalizeOptionalText(input.model)
-  const prompt = buildTaskTitlePrompt(requirement)
+  const availableTags = normalizeTagOptions(input.availableTags)
+  const prompt = buildTaskProfilePrompt(requirement, availableTags)
 
   if (input.provider === 'claude-code') {
     const args = ['-p', '--tools', '']

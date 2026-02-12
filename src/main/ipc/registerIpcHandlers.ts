@@ -171,6 +171,28 @@ function reportDoneWatcherIssue(message: string): void {
   process.stderr.write(`${message}\n`)
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const normalized: string[] = []
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      continue
+    }
+
+    const trimmed = item.trim()
+    if (trimmed.length === 0 || normalized.includes(trimmed)) {
+      continue
+    }
+
+    normalized.push(trimmed)
+  }
+
+  return normalized
+}
+
 function normalizeSuggestTaskTitlePayload(payload: unknown): SuggestTaskTitleInput {
   if (!payload || typeof payload !== 'object') {
     throw new Error('Invalid payload for task:suggest-title')
@@ -182,6 +204,7 @@ function normalizeSuggestTaskTitlePayload(payload: unknown): SuggestTaskTitleInp
   const cwd = typeof record.cwd === 'string' ? record.cwd.trim() : ''
   const requirement = typeof record.requirement === 'string' ? record.requirement.trim() : ''
   const model = typeof record.model === 'string' ? record.model.trim() : ''
+  const availableTags = normalizeStringArray(record.availableTags)
 
   if (cwd.length === 0) {
     throw new Error('Invalid cwd for task:suggest-title')
@@ -196,6 +219,7 @@ function normalizeSuggestTaskTitlePayload(payload: unknown): SuggestTaskTitleInp
     cwd,
     requirement,
     model: model.length > 0 ? model : null,
+    availableTags,
   }
 }
 

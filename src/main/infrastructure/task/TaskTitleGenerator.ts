@@ -2,16 +2,27 @@ import { spawn } from 'node:child_process'
 import { readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { SuggestTaskTitleInput, SuggestTaskTitleResult } from '../../../shared/types/api'
+import type {
+  SuggestTaskTitleInput,
+  SuggestTaskTitleResult,
+  TaskPriority,
+} from '../../../shared/types/api'
 import { buildTaskTitleCommand } from './TaskTitleCommandFactory'
 
 const TASK_TITLE_TIMEOUT_MS = 30_000
 const TASK_TITLE_MAX_LENGTH = 96
+const TASK_PRIORITIES: TaskPriority[] = ['low', 'medium', 'high', 'urgent']
 
 interface CommandExecutionResult {
   exitCode: number
   stdout: string
   stderr: string
+}
+
+interface ParsedTaskProfile {
+  title: string
+  priority: TaskPriority
+  tags: string[]
 }
 
 function toErrorMessage(error: unknown): string {
@@ -24,6 +35,24 @@ function toErrorMessage(error: unknown): string {
   }
 
   return 'Unknown error'
+}
+
+function normalizeAvailableTags(value: string[] | undefined): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const normalized: string[] = []
+  for (const item of value) {
+    const tag = item.trim()
+    if (tag.length === 0 || normalized.includes(tag)) {
+      continue
+    }
+
+    normalized.push(tag)
+  }
+
+  return normalized
 }
 
 function fallbackTaskTitle(requirement: string): string {
@@ -55,6 +84,97 @@ function normalizeTaskTitle(raw: string, requirement: string): string {
   }
 
   return normalized
+}
+
+function normalizePriority(value: unknown): TaskPriority {
+  if (typeof value !== 'string') {
+    return 'medium'
+  }
+
+  const normalized = value.trim().toLowerCase()
+  return TASK_PRIORITIES.includes(normalized as TaskPriority)
+    ? (normalized as TaskPriority)
+    : 'medium'
+}
+
+function normalizeTags(tags: unknown, availableTags: string[]): string[] {
+  if (!Array.isArray(tags)) {
+    return []
+  }
+
+  const normalized: string[] = []
+  for (const item of tags) {
+    if (typeof item !== 'string') {
+      continue
+    }
+
+    const tag = item.trim()
+    if (tag.length === 0) {
+      continue
+    }
+
+    if (availableTags.length > 0 && !availableTags.includes(tag)) {
+      continue
+    }
+
+    if (!normalized.includes(tag)) {
+      normalized.push(tag)
+    }
+
+    if (normalized.length >= 3) {
+      break
+    }
+  }
+
+  return normalized
+}
+
+function fallbackTaskProfile(requirement: string, availableTags: string[]): ParsedTaskProfile {
+  const fallbackTags = availableTags.length > 0 ? [availableTags[0]] : []
+
+  return {
+    title: fallbackTaskTitle(requirement),
+    priority: 'medium',
+    tags: fallbackTags,
+  }
+}
+
+function parseTaskProfile(
+  rawOutput: string,
+  requirement: string,
+  availableTags: string[],
+): ParsedTaskProfile {
+  const fallback = fallbackTaskProfile(requirement, availableTags)
+
+  const firstObjectMatch = rawOutput.match(/\{[\s\S]*\}/)
+  const candidate = firstObjectMatch ? firstObjectMatch[0] : rawOutput
+
+  try {
+    const parsed = JSON.parse(candidate) as {
+      title?: unknown
+      priority?: unknown
+      tags?: unknown
+    }
+
+    const title = normalizeTaskTitle(
+      typeof parsed.title === 'string' ? parsed.title : '',
+      requirement,
+    )
+    const priority = normalizePriority(parsed.priority)
+    const tags = normalizeTags(parsed.tags, availableTags)
+
+    return {
+      title,
+      priority,
+      tags: tags.length > 0 ? tags : fallback.tags,
+    }
+  } catch {
+    return {
+      title: normalizeTaskTitle(rawOutput, requirement),
+      priority: fallback.priority,
+      tags: fallback.tags,
+    }
+  }
 }
 
 function testModeTitle(requirement: string): string {
@@ -118,6 +238,7 @@ export async function suggestTaskTitle(
 ): Promise<SuggestTaskTitleResult> {
   const requirement = input.requirement.trim()
   const cwd = input.cwd.trim()
+  const availableTags = normalizeAvailableTags(input.availableTags)
 
   if (requirement.length === 0) {
     throw new Error('Task requirement cannot be empty')
@@ -130,6 +251,8 @@ export async function suggestTaskTitle(
   if (process.env.NODE_ENV === 'test') {
     return {
       title: testModeTitle(requirement),
+      priority: 'medium',
+      tags: availableTags.length > 0 ? [availableTags[0]] : [],
       provider: input.provider,
       effectiveModel: input.model ?? null,
     }
@@ -142,6 +265,7 @@ export async function suggestTaskTitle(
     requirement,
     model: input.model ?? null,
     outputFilePath,
+    availableTags,
   })
 
   try {
@@ -156,14 +280,16 @@ export async function suggestTaskTitle(
       }
     }
 
-    const title = normalizeTaskTitle(rawOutput, requirement)
+    const profile = parseTaskProfile(rawOutput, requirement, availableTags)
 
-    if (title.length === 0 && result.exitCode !== 0) {
+    if (profile.title.length === 0 && result.exitCode !== 0) {
       throw new Error(`Task title generation failed: ${result.stderr}`)
     }
 
     return {
-      title,
+      title: profile.title,
+      priority: profile.priority,
+      tags: profile.tags,
       provider: command.provider,
       effectiveModel: command.effectiveModel,
     }

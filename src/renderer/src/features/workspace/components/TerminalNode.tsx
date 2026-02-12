@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { JSX, PointerEvent as ReactPointerEvent } from 'react'
+import { Handle, Position } from '@xyflow/react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
@@ -522,6 +523,9 @@ export function TerminalNode({
         event.stopPropagation()
       }}
     >
+      <Handle type="target" position={Position.Left} className="workspace-node-handle" />
+      <Handle type="source" position={Position.Right} className="workspace-node-handle" />
+
       <div className="terminal-node__header" data-node-drag-handle="true">
         <span className="terminal-node__title">{title}</span>
 

@@ -28,6 +28,7 @@ export interface AgentSettings {
   customModelOptionsByProvider: AgentCustomModelOptionsByProvider
   taskTitleProvider: TaskTitleProvider
   taskTitleModel: string
+  taskTagOptions: string[]
   normalizeZoomOnTerminalClick: boolean
 }
 
@@ -47,6 +48,7 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
   },
   taskTitleProvider: 'default',
   taskTitleModel: '',
+  taskTagOptions: ['feature', 'bug', 'refactor', 'docs', 'test'],
   normalizeZoomOnTerminalClick: true,
 }
 
@@ -102,6 +104,24 @@ function normalizeModelOptions(value: unknown): string[] {
   }
 
   return normalized
+}
+
+function normalizeTagOptions(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) {
+    return [...fallback]
+  }
+
+  const normalized: string[] = []
+  for (const item of value) {
+    const tag = normalizeTextValue(item)
+    if (tag.length === 0 || normalized.includes(tag)) {
+      continue
+    }
+
+    normalized.push(tag)
+  }
+
+  return normalized.length > 0 ? normalized : [...fallback]
 }
 
 export function resolveAgentModel(settings: AgentSettings, provider: AgentProvider): string | null {
@@ -191,6 +211,10 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
     : DEFAULT_AGENT_SETTINGS.taskTitleProvider
 
   const taskTitleModel = normalizeTextValue(value.taskTitleModel)
+  const taskTagOptions = normalizeTagOptions(
+    value.taskTagOptions,
+    DEFAULT_AGENT_SETTINGS.taskTagOptions,
+  )
   const normalizeZoomOnTerminalClick =
     normalizeBoolean(value.normalizeZoomOnTerminalClick) ??
     DEFAULT_AGENT_SETTINGS.normalizeZoomOnTerminalClick
@@ -202,6 +226,7 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
     customModelOptionsByProvider,
     taskTitleProvider,
     taskTitleModel,
+    taskTagOptions,
     normalizeZoomOnTerminalClick,
   }
 }

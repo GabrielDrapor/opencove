@@ -8,6 +8,7 @@ describe('buildTaskTitleCommand', () => {
       requirement: 'Implement retry with exponential backoff',
       model: 'gpt-5.2-codex',
       outputFilePath: '/tmp/cove-title.txt',
+      availableTags: ['feature', 'bug'],
     })
 
     expect(command.command).toBe('codex')
@@ -20,6 +21,7 @@ describe('buildTaskTitleCommand', () => {
     expect(command.args).toContain('gpt-5.2-codex')
     expect(command.args).toContain('-o')
     expect(command.args).toContain('/tmp/cove-title.txt')
+    expect(command.args[command.args.length - 1]).toContain('Available tags: feature, bug')
   })
 
   it('uses claude print mode with tools disabled', () => {
@@ -28,6 +30,7 @@ describe('buildTaskTitleCommand', () => {
       requirement: '实现登录重试与指数退避',
       model: null,
       outputFilePath: '/tmp/unused.txt',
+      availableTags: ['feature', 'bug'],
     })
 
     expect(command.command).toBe('claude')
@@ -35,6 +38,7 @@ describe('buildTaskTitleCommand', () => {
     expect(command.args[0]).toBe('-p')
     expect(command.args).toContain('--tools')
     expect(command.args).toContain('')
+    expect(command.args[command.args.length - 1]).toContain('Task requirement:')
   })
 
   it('rejects empty requirement', () => {
@@ -44,6 +48,7 @@ describe('buildTaskTitleCommand', () => {
         requirement: '   ',
         model: null,
         outputFilePath: '/tmp/cove-title.txt',
+        availableTags: ['feature', 'bug'],
       }),
     ).toThrow('Task requirement cannot be empty')
   })

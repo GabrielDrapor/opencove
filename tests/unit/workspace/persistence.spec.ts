@@ -148,6 +148,7 @@ describe('workspace persistence', () => {
       },
       taskTitleProvider: 'codex',
       taskTitleModel: 'gpt-5.2-codex',
+      taskTagOptions: ['feature', 'bug'],
       normalizeZoomOnTerminalClick: false,
     })
 
@@ -174,6 +175,7 @@ describe('workspace persistence', () => {
     expect(restored?.settings.customModelOptionsByProvider.codex).toEqual(['gpt-5.2-codex'])
     expect(restored?.settings.taskTitleProvider).toBe('codex')
     expect(restored?.settings.taskTitleModel).toBe('gpt-5.2-codex')
+    expect(restored?.settings.taskTagOptions).toEqual(['feature', 'bug'])
     expect(restored?.settings.normalizeZoomOnTerminalClick).toBe(false)
   })
 
@@ -242,6 +244,13 @@ describe('workspace persistence', () => {
     expect(restored?.settings.customModelOptionsByProvider.codex).toEqual([])
     expect(restored?.settings.taskTitleProvider).toBe('default')
     expect(restored?.settings.taskTitleModel).toBe('')
+    expect(restored?.settings.taskTagOptions).toEqual([
+      'feature',
+      'bug',
+      'refactor',
+      'docs',
+      'test',
+    ])
     expect(restored?.settings.normalizeZoomOnTerminalClick).toBe(true)
   })
 

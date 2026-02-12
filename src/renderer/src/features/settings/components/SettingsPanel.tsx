@@ -25,7 +25,7 @@ interface SettingsPanelProps {
   onClose: () => void
 }
 
-type SettingsSectionId = 'general' | 'canvas' | 'task-title' | 'model-override'
+type SettingsSectionId = 'general' | 'canvas' | 'task-title' | 'task-tags' | 'model-override'
 
 interface SettingsSection {
   id: SettingsSectionId
@@ -48,6 +48,11 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     id: 'task-title',
     title: 'Task Title',
     anchorId: 'settings-section-task-title',
+  },
+  {
+    id: 'task-tags',
+    title: 'Task Tags',
+    anchorId: 'settings-section-task-tags',
   },
   {
     id: 'model-override',
@@ -74,6 +79,7 @@ export function SettingsPanel({
     Record<AgentProvider, string>
   >(() => createInitialInputState())
   const [activeSectionId, setActiveSectionId] = useState<SettingsSectionId>('general')
+  const [addTaskTagInput, setAddTaskTagInput] = useState('')
 
   const updateDefaultProvider = (provider: AgentProvider): void => {
     onChange({
@@ -101,6 +107,40 @@ export function SettingsPanel({
       ...settings,
       normalizeZoomOnTerminalClick: enabled,
     })
+  }
+
+  const updateTaskTagOptions = (nextTags: string[]): void => {
+    onChange({
+      ...settings,
+      taskTagOptions: nextTags,
+    })
+  }
+
+  const removeTaskTagOption = (tag: string): void => {
+    if (!settings.taskTagOptions.includes(tag)) {
+      return
+    }
+
+    const nextTags = settings.taskTagOptions.filter(option => option !== tag)
+    if (nextTags.length === 0) {
+      return
+    }
+
+    updateTaskTagOptions(nextTags)
+  }
+
+  const addTaskTagOption = (): void => {
+    const candidate = addTaskTagInput.trim()
+    if (candidate.length === 0) {
+      return
+    }
+
+    const nextTags = settings.taskTagOptions.includes(candidate)
+      ? settings.taskTagOptions
+      : [...settings.taskTagOptions, candidate]
+
+    updateTaskTagOptions(nextTags)
+    setAddTaskTagInput('')
   }
 
   const updateProviderCustomModelEnabled = (provider: AgentProvider, enabled: boolean): void => {
@@ -321,6 +361,68 @@ export function SettingsPanel({
 
               <p className="settings-panel__hint">
                 Effective provider: {AGENT_PROVIDER_LABEL[effectiveTaskTitleProvider]}
+              </p>
+            </div>
+
+            <div className="settings-panel__section" id="settings-section-task-tags">
+              <h3>Task Tags</h3>
+
+              <div
+                className="settings-provider-card__model-list"
+                data-testid="settings-task-tag-list"
+              >
+                {settings.taskTagOptions.map(tag => (
+                  <div className="settings-provider-card__model-item" key={tag}>
+                    <span className="settings-provider-card__model-radio">
+                      <span>{tag}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className="settings-provider-card__model-remove"
+                      data-testid={`settings-task-tag-remove-${tag}`}
+                      disabled={settings.taskTagOptions.length <= 1}
+                      onClick={() => {
+                        removeTaskTagOption(tag)
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="settings-provider-card__add-row">
+                <input
+                  type="text"
+                  data-testid="settings-task-tag-add-input"
+                  value={addTaskTagInput}
+                  placeholder="Example: perf"
+                  onChange={event => {
+                    setAddTaskTagInput(event.target.value)
+                  }}
+                  onKeyDown={event => {
+                    if (event.key !== 'Enter') {
+                      return
+                    }
+
+                    event.preventDefault()
+                    addTaskTagOption()
+                  }}
+                />
+                <button
+                  type="button"
+                  data-testid="settings-task-tag-add-button"
+                  disabled={addTaskTagInput.trim().length === 0}
+                  onClick={() => {
+                    addTaskTagOption()
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+
+              <p className="settings-panel__hint">
+                Tasks can only select from this list; AI generation also picks from this list.
               </p>
             </div>
 

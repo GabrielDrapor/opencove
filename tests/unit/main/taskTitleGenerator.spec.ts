@@ -8,10 +8,13 @@ describe('suggestTaskTitle', () => {
       cwd: '/tmp',
       requirement: 'Implement login retry with exponential backoff and jitter',
       model: 'gpt-5.2-codex',
+      availableTags: ['feature', 'bug'],
     })
 
     expect(result.provider).toBe('codex')
     expect(result.effectiveModel).toBe('gpt-5.2-codex')
     expect(result.title.startsWith('Auto:')).toBe(true)
+    expect(result.priority).toBe('medium')
+    expect(result.tags).toEqual(['feature'])
   })
 })

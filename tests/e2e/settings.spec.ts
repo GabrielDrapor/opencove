@@ -42,6 +42,19 @@ test.describe('Settings', () => {
       await expect(defaultProvider).toBeVisible()
       await defaultProvider.selectOption('codex')
 
+      const taskTagsNav = window.locator('[data-testid="settings-section-nav-task-tags"]')
+      await taskTagsNav.click()
+
+      const addTaskTagInput = window.locator('[data-testid="settings-task-tag-add-input"]')
+      await addTaskTagInput.fill('ops')
+      await window.locator('[data-testid="settings-task-tag-add-button"]').click()
+      await expect(window.locator('[data-testid="settings-task-tag-list"]')).toContainText('ops')
+
+      await window.locator('[data-testid="settings-task-tag-remove-feature"]').click()
+      await expect(window.locator('[data-testid="settings-task-tag-list"]')).not.toContainText(
+        'feature',
+      )
+
       const taskTitleProvider = window.locator('[data-testid="settings-task-title-provider"]')
       await taskTitleProvider.selectOption('codex')
 
@@ -96,6 +109,7 @@ test.describe('Settings', () => {
             }
             taskTitleProvider?: string
             taskTitleModel?: string
+            taskTagOptions?: string[]
             normalizeZoomOnTerminalClick?: boolean
           }
         }
@@ -109,6 +123,8 @@ test.describe('Settings', () => {
       expect(persistedSettings?.customModelOptionsByProvider?.codex).toContain('gpt-5.2-codex')
       expect(persistedSettings?.taskTitleProvider).toBe('codex')
       expect(persistedSettings?.taskTitleModel).toBe('gpt-5.2-codex')
+      expect(persistedSettings?.taskTagOptions).toContain('ops')
+      expect(persistedSettings?.taskTagOptions).not.toContain('feature')
       expect(persistedSettings?.normalizeZoomOnTerminalClick).toBe(false)
     } finally {
       await electronApp.close()

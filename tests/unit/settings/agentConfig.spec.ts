@@ -31,6 +31,7 @@ describe('agent settings normalization', () => {
       },
       taskTitleProvider: 'claude-code',
       taskTitleModel: 'claude-opus-4-6',
+      taskTagOptions: ['feature', 'bug', 'feature', ''],
       normalizeZoomOnTerminalClick: false,
     })
 
@@ -46,6 +47,7 @@ describe('agent settings normalization', () => {
     expect(result.customModelOptionsByProvider.codex).toEqual(['gpt-5.2-codex'])
     expect(result.taskTitleProvider).toBe('claude-code')
     expect(result.taskTitleModel).toBe('claude-opus-4-6')
+    expect(result.taskTagOptions).toEqual(['feature', 'bug'])
     expect(result.normalizeZoomOnTerminalClick).toBe(false)
     expect(resolveTaskTitleProvider(result)).toBe('claude-code')
     expect(resolveTaskTitleModel(result)).toBe('claude-opus-4-6')
@@ -70,6 +72,7 @@ describe('agent settings normalization', () => {
       },
       taskTitleProvider: 'default',
       taskTitleModel: '   ',
+      taskTagOptions: ['  ops ', 'ops', ''],
     })
 
     expect(result.customModelByProvider['claude-code']).toBe('')
@@ -78,6 +81,7 @@ describe('agent settings normalization', () => {
     expect(result.customModelOptionsByProvider.codex).toEqual(['gpt-5.2-codex'])
     expect(result.taskTitleProvider).toBe('default')
     expect(result.taskTitleModel).toBe('')
+    expect(result.taskTagOptions).toEqual(['ops'])
     expect(result.normalizeZoomOnTerminalClick).toBe(true)
     expect(resolveAgentModel(result, 'claude-code')).toBeNull()
     expect(resolveAgentModel(result, 'codex')).toBe('gpt-5.2-codex')
@@ -98,6 +102,14 @@ describe('agent settings normalization', () => {
     expect(result.customModelEnabledByProvider.codex).toBe(true)
     expect(result.customModelByProvider['claude-code']).toBe('claude-sonnet-4-5-20250929')
     expect(result.customModelByProvider.codex).toBe('gpt-5.2-codex')
+  })
+
+  it('falls back to default task tags when options are invalid', () => {
+    const result = normalizeAgentSettings({
+      taskTagOptions: [123, null],
+    })
+
+    expect(result.taskTagOptions).toEqual(DEFAULT_AGENT_SETTINGS.taskTagOptions)
   })
 
   it('ensures selected custom model appears in options list', () => {

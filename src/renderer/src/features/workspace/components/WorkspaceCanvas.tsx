@@ -8,9 +8,11 @@ import {
   ReactFlowProvider,
   applyNodeChanges,
   useReactFlow,
+  type Edge,
   type Node,
   type NodeChange,
   type NodePositionChange,
+  MarkerType,
 } from '@xyflow/react'
 import { Map as MapIcon } from 'lucide-react'
 import {
@@ -24,7 +26,14 @@ import {
 } from '../../settings/agentConfig'
 import { TaskNode } from './TaskNode'
 import { TerminalNode } from './TerminalNode'
-import type { AgentNodeData, Point, Size, TaskRuntimeStatus, TerminalNodeData } from '../types'
+import type {
+  AgentNodeData,
+  Point,
+  Size,
+  TaskPriority,
+  TaskRuntimeStatus,
+  TerminalNodeData,
+} from '../types'
 import {
   clampSizeToNonOverlapping,
   findNearestFreePosition,
@@ -63,6 +72,8 @@ interface TaskCreatorState {
   anchor: Point
   title: string
   requirement: string
+  priority: TaskPriority
+  selectedTags: string[]
   autoGenerateTitle: boolean
   isGeneratingTitle: boolean
   isCreating: boolean
@@ -76,8 +87,17 @@ interface TaskEditorState {
   titleGeneratedInEditor: boolean
   title: string
   requirement: string
+  priority: TaskPriority
+  selectedTags: string[]
   autoGenerateTitle: boolean
   isGeneratingTitle: boolean
+  isSaving: boolean
+  error: string | null
+}
+
+interface TaskAssignerState {
+  taskNodeId: string
+  selectedAgentNodeId: string
   isSaving: boolean
   error: string | null
 }
@@ -108,6 +128,64 @@ const TASK_SIZE: Size = {
 const MIN_SIZE: Size = {
   width: 320,
   height: 220,
+}
+
+const TASK_PRIORITY_OPTIONS: Array<{ value: TaskPriority; label: string }> = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
+]
+
+const TASK_PRIORITIES: TaskPriority[] = TASK_PRIORITY_OPTIONS.map(option => option.value)
+
+function normalizeTaskTagSelection(selection: string[], availableTags: string[]): string[] {
+  const normalized: string[] = []
+
+  for (const tag of selection) {
+    const value = tag.trim()
+    if (value.length === 0 || normalized.includes(value)) {
+      continue
+    }
+
+    if (availableTags.includes(value)) {
+      normalized.push(value)
+    }
+  }
+
+  return normalized
+}
+
+function normalizeTaskPriority(value: unknown): TaskPriority {
+  if (typeof value !== 'string') {
+    return 'medium'
+  }
+
+  const normalized = value.trim().toLowerCase()
+  return TASK_PRIORITIES.includes(normalized as TaskPriority)
+    ? (normalized as TaskPriority)
+    : 'medium'
+}
+
+function isAgentWorking(status: TerminalNodeData['status']): boolean {
+  return status === 'running' || status === 'restoring'
+}
+
+function toAgentRuntimeLabel(status: TerminalNodeData['status']): string {
+  switch (status) {
+    case 'running':
+      return 'Working'
+    case 'restoring':
+      return 'Restoring'
+    case 'failed':
+      return 'Failed'
+    case 'stopped':
+      return 'Stopped'
+    case 'exited':
+      return 'Exited'
+    default:
+      return 'Idle'
+  }
 }
 
 function toErrorMessage(error: unknown): string {
@@ -162,11 +240,12 @@ function WorkspaceCanvasInner({
   const [agentLauncher, setAgentLauncher] = useState<AgentLauncherState | null>(null)
   const [taskCreator, setTaskCreator] = useState<TaskCreatorState | null>(null)
   const [taskEditor, setTaskEditor] = useState<TaskEditorState | null>(null)
+  const [taskAssigner, setTaskAssigner] = useState<TaskAssignerState | null>(null)
   const [taskDeleteConfirmation, setTaskDeleteConfirmation] =
     useState<TaskDeleteConfirmationState | null>(null)
   const [isMinimapVisible, setIsMinimapVisible] = useState(true)
 
-  const reactFlow = useReactFlow<Node<TerminalNodeData>>()
+  const reactFlow = useReactFlow<Node<TerminalNodeData>, Edge>()
   const canvasRef = useRef<HTMLDivElement | null>(null)
 
   const nodesRef = useRef(nodes)
@@ -177,7 +256,12 @@ function WorkspaceCanvasInner({
   const resumeAgentNodeRef = useRef<(nodeId: string) => Promise<void>>(async () => undefined)
   const runTaskAgentRef = useRef<(nodeId: string) => Promise<void>>(async () => undefined)
   const openTaskEditorRef = useRef<(nodeId: string) => void>(() => undefined)
+  const quickUpdateTaskTitleRef = useRef<(nodeId: string, title: string) => void>(() => undefined)
+  const quickUpdateTaskRequirementRef = useRef<(nodeId: string, requirement: string) => void>(
+    () => undefined,
+  )
   const requestTaskDeleteRef = useRef<(nodeId: string) => void>(() => undefined)
+  const openTaskAssignerRef = useRef<(nodeId: string) => void>(() => undefined)
   const updateTaskStatusRef = useRef<(nodeId: string, status: TaskRuntimeStatus) => void>(
     () => undefined,
   )
@@ -189,6 +273,11 @@ function WorkspaceCanvasInner({
   const normalizeViewportForTerminalInteractionRef = useRef<(nodeId: string) => void>(
     () => undefined,
   )
+
+  const taskTagOptions = useMemo(() => {
+    const fromSettings = agentSettings.taskTagOptions ?? []
+    return [...new Set(fromSettings.map(tag => tag.trim()).filter(tag => tag.length > 0))]
+  }, [agentSettings.taskTagOptions])
 
   useEffect(() => {
     nodesRef.current = nodes
@@ -230,7 +319,55 @@ function WorkspaceCanvasInner({
         await window.coveApi.pty.kill({ sessionId: target.data.sessionId })
       }
 
-      setNodes(prevNodes => prevNodes.filter(node => node.id !== nodeId))
+      setNodes(prevNodes => {
+        const now = new Date().toISOString()
+
+        return prevNodes
+          .filter(node => node.id !== nodeId)
+          .map(node => {
+            if (
+              target?.data.kind === 'task' &&
+              target.data.task?.linkedAgentNodeId &&
+              node.id === target.data.task.linkedAgentNodeId &&
+              node.data.kind === 'agent' &&
+              node.data.agent
+            ) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  agent: {
+                    ...node.data.agent,
+                    taskId: null,
+                  },
+                },
+              }
+            }
+
+            if (
+              target?.data.kind === 'agent' &&
+              target.data.agent?.taskId &&
+              node.id === target.data.agent.taskId &&
+              node.data.kind === 'task' &&
+              node.data.task
+            ) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  task: {
+                    ...node.data.task,
+                    linkedAgentNodeId: null,
+                    status: node.data.task.status === 'doing' ? 'todo' : node.data.task.status,
+                    updatedAt: now,
+                  },
+                },
+              }
+            }
+
+            return node
+          })
+      })
     },
     [setNodes],
   )
@@ -371,6 +508,7 @@ function WorkspaceCanvasInner({
       }
 
       const now = new Date().toISOString()
+
       const nextNode: Node<TerminalNodeData> = {
         id: crypto.randomUUID(),
         type: 'terminalNode',
@@ -406,6 +544,8 @@ function WorkspaceCanvasInner({
       title: string,
       requirement: string,
       autoGeneratedTitle: boolean,
+      priority: TaskPriority,
+      tags: string[],
     ): Node<TerminalNodeData> | null => {
       const currentNodes = nodesRef.current
       const nonOverlappingPosition = findNearestFreePosition(anchor, TASK_SIZE, currentNodes)
@@ -415,6 +555,8 @@ function WorkspaceCanvasInner({
         window.alert('当前视图附近没有可用空位，请先移动或关闭部分窗口。')
         return null
       }
+
+      const now = new Date().toISOString()
 
       const nextNode: Node<TerminalNodeData> = {
         id: crypto.randomUUID(),
@@ -436,9 +578,13 @@ function WorkspaceCanvasInner({
           task: {
             requirement,
             status: 'todo',
+            priority,
+            tags,
             linkedAgentNodeId: null,
             lastRunAt: null,
             autoGeneratedTitle,
+            createdAt: now,
+            updatedAt: now,
           },
         },
         draggable: true,
@@ -634,6 +780,80 @@ function WorkspaceCanvasInner({
         return
       }
 
+      const linkedAgentNodeId = taskNode.data.task.linkedAgentNodeId
+      if (linkedAgentNodeId) {
+        const linkedAgentNode = nodesRef.current.find(node => node.id === linkedAgentNodeId)
+
+        if (
+          linkedAgentNode &&
+          linkedAgentNode.data.kind === 'agent' &&
+          linkedAgentNode.data.agent
+        ) {
+          const now = new Date().toISOString()
+
+          setNodes(prevNodes =>
+            prevNodes.map(node => {
+              if (node.id === linkedAgentNodeId && node.data.kind === 'agent' && node.data.agent) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    agent: {
+                      ...node.data.agent,
+                      prompt: requirement,
+                      taskId: taskNodeId,
+                    },
+                    lastError: null,
+                  },
+                }
+              }
+
+              if (node.id === taskNodeId && node.data.kind === 'task' && node.data.task) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    lastError: null,
+                    task: {
+                      ...node.data.task,
+                      status: 'doing',
+                      linkedAgentNodeId,
+                      lastRunAt: now,
+                      updatedAt: now,
+                    },
+                  },
+                }
+              }
+
+              return node
+            }),
+          )
+
+          await launchAgentInNode(linkedAgentNodeId, 'new')
+          return
+        }
+
+        setNodes(prevNodes =>
+          prevNodes.map(node => {
+            if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
+              return node
+            }
+
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                task: {
+                  ...node.data.task,
+                  linkedAgentNodeId: null,
+                  updatedAt: new Date().toISOString(),
+                },
+              },
+            }
+          }),
+        )
+      }
+
       const provider = agentSettings.defaultProvider
       const model = resolveAgentModel(agentSettings, provider)
 
@@ -675,6 +895,8 @@ function WorkspaceCanvasInner({
           return
         }
 
+        const now = new Date().toISOString()
+
         setNodes(prevNodes =>
           prevNodes.map(node => {
             if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
@@ -689,7 +911,8 @@ function WorkspaceCanvasInner({
                   ...node.data.task,
                   status: 'doing',
                   linkedAgentNodeId: createdAgentNode.id,
-                  lastRunAt: new Date().toISOString(),
+                  lastRunAt: now,
+                  updatedAt: now,
                 },
               },
             }
@@ -713,7 +936,14 @@ function WorkspaceCanvasInner({
         )
       }
     },
-    [agentSettings, buildAgentNodeTitle, createNodeForSession, setNodes, workspacePath],
+    [
+      agentSettings,
+      buildAgentNodeTitle,
+      createNodeForSession,
+      launchAgentInNode,
+      setNodes,
+      workspacePath,
+    ],
   )
 
   const updateTaskStatus = useCallback(
@@ -731,6 +961,72 @@ function WorkspaceCanvasInner({
               task: {
                 ...node.data.task,
                 status,
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          }
+        }),
+      )
+    },
+    [setNodes],
+  )
+
+  const quickUpdateTaskTitle = useCallback(
+    (taskNodeId: string, nextTitle: string) => {
+      const normalizedTitle = nextTitle.trim()
+      if (normalizedTitle.length === 0) {
+        return
+      }
+
+      const now = new Date().toISOString()
+      setNodes(prevNodes =>
+        prevNodes.map(node => {
+          if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
+            return node
+          }
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              title: normalizedTitle,
+              lastError: null,
+              task: {
+                ...node.data.task,
+                autoGeneratedTitle: false,
+                updatedAt: now,
+              },
+            },
+          }
+        }),
+      )
+    },
+    [setNodes],
+  )
+
+  const quickUpdateTaskRequirement = useCallback(
+    (taskNodeId: string, nextRequirement: string) => {
+      const normalizedRequirement = nextRequirement.trim()
+      if (normalizedRequirement.length === 0) {
+        return
+      }
+
+      const now = new Date().toISOString()
+      setNodes(prevNodes =>
+        prevNodes.map(node => {
+          if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
+            return node
+          }
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              lastError: null,
+              task: {
+                ...node.data.task,
+                requirement: normalizedRequirement,
+                updatedAt: now,
               },
             },
           }
@@ -741,7 +1037,9 @@ function WorkspaceCanvasInner({
   )
 
   const suggestTaskTitle = useCallback(
-    async (requirement: string): Promise<string> => {
+    async (
+      requirement: string,
+    ): Promise<{ title: string; priority: TaskPriority; tags: string[] }> => {
       const provider = resolveTaskTitleProvider(agentSettings)
       const model = resolveTaskTitleModel(agentSettings)
 
@@ -750,11 +1048,16 @@ function WorkspaceCanvasInner({
         cwd: workspacePath,
         requirement,
         model,
+        availableTags: taskTagOptions,
       })
 
-      return suggested.title
+      return {
+        title: suggested.title,
+        priority: normalizeTaskPriority(suggested.priority),
+        tags: normalizeTaskTagSelection(suggested.tags, taskTagOptions),
+      }
     },
-    [agentSettings, workspacePath],
+    [agentSettings, taskTagOptions, workspacePath],
   )
 
   useEffect(() => {
@@ -792,6 +1095,18 @@ function WorkspaceCanvasInner({
       updateTaskStatus(nodeId, status)
     }
   }, [updateTaskStatus])
+
+  useEffect(() => {
+    quickUpdateTaskTitleRef.current = (nodeId, title) => {
+      quickUpdateTaskTitle(nodeId, title)
+    }
+  }, [quickUpdateTaskTitle])
+
+  useEffect(() => {
+    quickUpdateTaskRequirementRef.current = (nodeId, requirement) => {
+      quickUpdateTaskRequirement(nodeId, requirement)
+    }
+  }, [quickUpdateTaskRequirement])
 
   useEffect(() => {
     updateNodeScrollbackRef.current = (nodeId, scrollback) => {
@@ -836,6 +1151,7 @@ function WorkspaceCanvasInner({
               task: {
                 ...node.data.task,
                 status: 'ai_done',
+                updatedAt: new Date().toISOString(),
               },
             },
           }
@@ -896,6 +1212,7 @@ function WorkspaceCanvasInner({
               task: {
                 ...node.data.task,
                 status: 'ai_done',
+                updatedAt: new Date().toISOString(),
               },
             },
           }
@@ -995,18 +1312,38 @@ function WorkspaceCanvasInner({
           return null
         }
 
+        const linkedAgentTitle = data.task.linkedAgentNodeId
+          ? (nodesRef.current.find(
+              node => node.id === data.task?.linkedAgentNodeId && node.data.kind === 'agent',
+            )?.data.title ?? null)
+          : null
+
         return (
           <TaskNode
             title={data.title}
             requirement={data.task.requirement}
             status={data.task.status}
+            priority={data.task.priority}
+            tags={data.task.tags}
+            createdAt={data.task.createdAt}
+            updatedAt={data.task.updatedAt}
+            linkedAgentTitle={linkedAgentTitle}
             width={data.width}
             height={data.height}
             onClose={() => {
               requestTaskDeleteRef.current(id)
             }}
-            onEdit={() => {
+            onOpenEditor={() => {
               openTaskEditorRef.current(id)
+            }}
+            onQuickTitleSave={title => {
+              quickUpdateTaskTitleRef.current(id, title)
+            }}
+            onQuickRequirementSave={requirement => {
+              quickUpdateTaskRequirementRef.current(id, requirement)
+            }}
+            onAssignAgent={() => {
+              openTaskAssignerRef.current(id)
             }}
             onRunAgent={() => {
               void runTaskAgentRef.current(id)
@@ -1081,6 +1418,8 @@ function WorkspaceCanvasInner({
       },
       title: '',
       requirement: '',
+      priority: 'medium',
+      selectedTags: [],
       autoGenerateTitle: true,
       isGeneratingTitle: false,
       isCreating: false,
@@ -1109,6 +1448,178 @@ function WorkspaceCanvasInner({
       return null
     })
   }, [])
+
+  const openTaskAssigner = useCallback((nodeId: string) => {
+    const node = nodesRef.current.find(item => item.id === nodeId)
+    if (!node || node.data.kind !== 'task' || !node.data.task) {
+      return
+    }
+
+    setTaskAssigner({
+      taskNodeId: nodeId,
+      selectedAgentNodeId: node.data.task.linkedAgentNodeId ?? '',
+      isSaving: false,
+      error: null,
+    })
+
+    setContextMenu(null)
+  }, [])
+
+  const closeTaskAssigner = useCallback(() => {
+    setTaskAssigner(prev => {
+      if (!prev || prev.isSaving) {
+        return prev
+      }
+
+      return null
+    })
+  }, [])
+
+  const applyTaskAssignment = useCallback(async () => {
+    if (!taskAssigner) {
+      return
+    }
+
+    const selectedAgentNodeId = taskAssigner.selectedAgentNodeId.trim()
+
+    if (selectedAgentNodeId.length > 0) {
+      const selectedAgentNode = nodesRef.current.find(node => node.id === selectedAgentNodeId)
+      if (
+        !selectedAgentNode ||
+        selectedAgentNode.data.kind !== 'agent' ||
+        !selectedAgentNode.data.agent
+      ) {
+        setTaskAssigner(prev =>
+          prev
+            ? {
+                ...prev,
+                error: '请选择有效的 Agent。',
+              }
+            : prev,
+        )
+        return
+      }
+    }
+
+    setTaskAssigner(prev =>
+      prev
+        ? {
+            ...prev,
+            isSaving: true,
+            error: null,
+          }
+        : prev,
+    )
+
+    try {
+      setNodes(prevNodes => {
+        const targetTask = prevNodes.find(
+          node =>
+            node.id === taskAssigner.taskNodeId && node.data.kind === 'task' && node.data.task,
+        )
+
+        if (!targetTask || targetTask.data.kind !== 'task' || !targetTask.data.task) {
+          return prevNodes
+        }
+
+        const selectedId = selectedAgentNodeId.length > 0 ? selectedAgentNodeId : null
+        const selectedAgentNode = selectedId
+          ? prevNodes.find(node => node.id === selectedId && node.data.kind === 'agent')
+          : null
+
+        const displacedTaskId = selectedId
+          ? (prevNodes.find(node => {
+              return (
+                node.id !== targetTask.id &&
+                node.data.kind === 'task' &&
+                node.data.task?.linkedAgentNodeId === selectedId
+              )
+            })?.id ?? null)
+          : null
+
+        const now = new Date().toISOString()
+
+        return prevNodes.map(node => {
+          if (node.id === targetTask.id && node.data.kind === 'task' && node.data.task) {
+            const nextStatus = selectedId
+              ? selectedAgentNode && isAgentWorking(selectedAgentNode.data.status)
+                ? 'doing'
+                : node.data.task.status
+              : node.data.task.status === 'doing'
+                ? 'todo'
+                : node.data.task.status
+
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                task: {
+                  ...node.data.task,
+                  linkedAgentNodeId: selectedId,
+                  status: nextStatus,
+                  updatedAt: now,
+                },
+              },
+            }
+          }
+
+          if (
+            displacedTaskId &&
+            node.id === displacedTaskId &&
+            node.data.kind === 'task' &&
+            node.data.task
+          ) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                task: {
+                  ...node.data.task,
+                  linkedAgentNodeId: null,
+                  status: node.data.task.status === 'doing' ? 'todo' : node.data.task.status,
+                  updatedAt: now,
+                },
+              },
+            }
+          }
+
+          if (node.data.kind === 'agent' && node.data.agent) {
+            const shouldAssign = selectedId !== null && node.id === selectedId
+            const shouldClear = node.data.agent.taskId === targetTask.id && !shouldAssign
+
+            if (!shouldAssign && !shouldClear) {
+              return node
+            }
+
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                agent: {
+                  ...node.data.agent,
+                  taskId: shouldAssign ? targetTask.id : null,
+                },
+              },
+            }
+          }
+
+          return node
+        })
+      })
+
+      setTaskAssigner(null)
+    } catch (error) {
+      setTaskAssigner(prev =>
+        prev
+          ? {
+              ...prev,
+              isSaving: false,
+              error: `任务分配失败：${toErrorMessage(error)}`,
+            }
+          : prev,
+      )
+    }
+  }, [setNodes, taskAssigner])
 
   const generateTaskTitle = useCallback(async () => {
     if (!taskCreator) {
@@ -1139,12 +1650,14 @@ function WorkspaceCanvasInner({
     )
 
     try {
-      const nextTitle = await suggestTaskTitle(requirement)
+      const suggestion = await suggestTaskTitle(requirement)
       setTaskCreator(prev =>
         prev
           ? {
               ...prev,
-              title: nextTitle,
+              title: suggestion.title,
+              priority: suggestion.priority,
+              selectedTags: suggestion.tags,
               isGeneratingTitle: false,
               error: null,
             }
@@ -1156,7 +1669,7 @@ function WorkspaceCanvasInner({
           ? {
               ...prev,
               isGeneratingTitle: false,
-              error: `自动命名失败：${toErrorMessage(error)}`,
+              error: `自动生成失败：${toErrorMessage(error)}`,
             }
           : prev,
       )
@@ -1170,6 +1683,8 @@ function WorkspaceCanvasInner({
 
     const requirement = taskCreator.requirement.trim()
     let title = taskCreator.title.trim()
+    let priority = taskCreator.priority
+    let selectedTags = normalizeTaskTagSelection(taskCreator.selectedTags, taskTagOptions)
 
     if (requirement.length === 0) {
       setTaskCreator(prev =>
@@ -1203,18 +1718,28 @@ function WorkspaceCanvasInner({
               ? {
                   ...prev,
                   isCreating: false,
-                  error: '请输入任务名称或开启自动命名。',
+                  error: '请输入任务名称或开启自动生成。',
                 }
               : prev,
           )
           return
         }
 
-        title = await suggestTaskTitle(requirement)
+        const suggestion = await suggestTaskTitle(requirement)
+        title = suggestion.title
+        priority = suggestion.priority
+        selectedTags = suggestion.tags
         autoGeneratedTitle = true
       }
 
-      const created = createTaskNode(taskCreator.anchor, title, requirement, autoGeneratedTitle)
+      const created = createTaskNode(
+        taskCreator.anchor,
+        title,
+        requirement,
+        autoGeneratedTitle,
+        priority,
+        selectedTags,
+      )
 
       if (!created) {
         setTaskCreator(prev =>
@@ -1241,7 +1766,7 @@ function WorkspaceCanvasInner({
           : prev,
       )
     }
-  }, [createTaskNode, suggestTaskTitle, taskCreator])
+  }, [createTaskNode, suggestTaskTitle, taskCreator, taskTagOptions])
 
   const openTaskEditor = useCallback((nodeId: string) => {
     const node = nodesRef.current.find(item => item.id === nodeId)
@@ -1256,6 +1781,8 @@ function WorkspaceCanvasInner({
       titleGeneratedInEditor: false,
       title: node.data.title,
       requirement: node.data.task.requirement,
+      priority: node.data.task.priority,
+      selectedTags: node.data.task.tags,
       autoGenerateTitle: node.data.task.autoGeneratedTitle,
       isGeneratingTitle: false,
       isSaving: false,
@@ -1294,12 +1821,14 @@ function WorkspaceCanvasInner({
     )
 
     try {
-      const nextTitle = await suggestTaskTitle(requirement)
+      const suggestion = await suggestTaskTitle(requirement)
       setTaskEditor(prev =>
         prev
           ? {
               ...prev,
-              title: nextTitle,
+              title: suggestion.title,
+              priority: suggestion.priority,
+              selectedTags: suggestion.tags,
               titleGeneratedInEditor: true,
               isGeneratingTitle: false,
               error: null,
@@ -1312,7 +1841,7 @@ function WorkspaceCanvasInner({
           ? {
               ...prev,
               isGeneratingTitle: false,
-              error: `自动命名失败：${toErrorMessage(error)}`,
+              error: `自动生成失败：${toErrorMessage(error)}`,
             }
           : prev,
       )
@@ -1326,6 +1855,8 @@ function WorkspaceCanvasInner({
 
     const requirement = taskEditor.requirement.trim()
     let title = taskEditor.title.trim()
+    let priority = taskEditor.priority
+    let selectedTags = normalizeTaskTagSelection(taskEditor.selectedTags, taskTagOptions)
 
     if (requirement.length === 0) {
       setTaskEditor(prev =>
@@ -1359,18 +1890,23 @@ function WorkspaceCanvasInner({
               ? {
                   ...prev,
                   isSaving: false,
-                  error: '请输入任务名称或开启自动命名。',
+                  error: '请输入任务名称或开启自动生成。',
                 }
               : prev,
           )
           return
         }
 
-        title = await suggestTaskTitle(requirement)
+        const suggestion = await suggestTaskTitle(requirement)
+        title = suggestion.title
+        priority = suggestion.priority
+        selectedTags = suggestion.tags
         autoGeneratedTitle = true
       } else if (title !== taskEditor.initialTitle) {
         autoGeneratedTitle = taskEditor.titleGeneratedInEditor
       }
+
+      const now = new Date().toISOString()
 
       setNodes(prevNodes =>
         prevNodes.map(node => {
@@ -1387,7 +1923,10 @@ function WorkspaceCanvasInner({
               task: {
                 ...node.data.task,
                 requirement,
+                priority,
+                tags: selectedTags,
                 autoGeneratedTitle,
+                updatedAt: now,
               },
             },
           }
@@ -1406,7 +1945,7 @@ function WorkspaceCanvasInner({
           : prev,
       )
     }
-  }, [setNodes, suggestTaskTitle, taskEditor])
+  }, [setNodes, suggestTaskTitle, taskEditor, taskTagOptions])
 
   const requestTaskDelete = useCallback(
     (nodeId: string) => {
@@ -1448,6 +1987,12 @@ function WorkspaceCanvasInner({
       requestTaskDelete(nodeId)
     }
   }, [requestTaskDelete])
+
+  useEffect(() => {
+    openTaskAssignerRef.current = nodeId => {
+      openTaskAssigner(nodeId)
+    }
+  }, [openTaskAssigner])
 
   const openAgentLauncher = useCallback(() => {
     if (!contextMenu) {
@@ -1664,6 +2209,52 @@ function WorkspaceCanvasInner({
         nextNodes = applyPendingScrollbacks(nextNodes)
       }
 
+      if (removedIds.size > 0) {
+        const now = new Date().toISOString()
+
+        nextNodes = nextNodes.map(node => {
+          if (
+            node.data.kind === 'task' &&
+            node.data.task &&
+            node.data.task.linkedAgentNodeId &&
+            removedIds.has(node.data.task.linkedAgentNodeId)
+          ) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                task: {
+                  ...node.data.task,
+                  linkedAgentNodeId: null,
+                  status: node.data.task.status === 'doing' ? 'todo' : node.data.task.status,
+                  updatedAt: now,
+                },
+              },
+            }
+          }
+
+          if (
+            node.data.kind === 'agent' &&
+            node.data.agent &&
+            node.data.agent.taskId &&
+            removedIds.has(node.data.agent.taskId)
+          ) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                agent: {
+                  ...node.data.agent,
+                  taskId: null,
+                },
+              },
+            }
+          }
+
+          return node
+        })
+      }
+
       const shouldSyncLayout = changes.some(change => {
         if (change.type === 'remove') {
           return true
@@ -1701,7 +2292,6 @@ function WorkspaceCanvasInner({
 
   const taskTitleProviderLabel = AGENT_PROVIDER_LABEL[resolveTaskTitleProvider(agentSettings)]
   const taskTitleModelLabel = resolveTaskTitleModel(agentSettings) ?? 'default model'
-
   const minimapNodeColor = useCallback((node: Node<TerminalNodeData>): string => {
     switch (node.data.kind) {
       case 'agent':
@@ -1713,11 +2303,81 @@ function WorkspaceCanvasInner({
     }
   }, [])
 
+  const taskAssignerAgentOptions = useMemo(() => {
+    const taskTitleById = new Map(
+      nodes.filter(node => node.data.kind === 'task').map(node => [node.id, node.data.title]),
+    )
+
+    return nodes
+      .filter(node => node.data.kind === 'agent' && node.data.agent)
+      .map(node => ({
+        nodeId: node.id,
+        title: node.data.title,
+        status: node.data.status,
+        linkedTaskTitle: node.data.agent?.taskId
+          ? (taskTitleById.get(node.data.agent.taskId) ?? null)
+          : null,
+      }))
+  }, [nodes])
+
+  const activeTaskForAssigner = useMemo(() => {
+    if (!taskAssigner) {
+      return null
+    }
+
+    return (
+      nodes.find(node => node.id === taskAssigner.taskNodeId && node.data.kind === 'task') ?? null
+    )
+  }, [nodes, taskAssigner])
+
+  const taskAgentEdges = useMemo<Edge[]>(() => {
+    const nodeById = new Map(nodes.map(node => [node.id, node]))
+
+    return nodes
+      .filter(node => node.data.kind === 'task' && node.data.task?.linkedAgentNodeId)
+      .flatMap(taskNode => {
+        const linkedAgentNodeId = taskNode.data.task?.linkedAgentNodeId
+        if (!linkedAgentNodeId) {
+          return []
+        }
+
+        const linkedAgentNode = nodeById.get(linkedAgentNodeId)
+        if (!linkedAgentNode || linkedAgentNode.data.kind !== 'agent') {
+          return []
+        }
+
+        const isActive = isAgentWorking(linkedAgentNode.data.status)
+        const edgeClassName = isActive
+          ? 'workspace-task-agent-edge workspace-task-agent-edge--active'
+          : 'workspace-task-agent-edge workspace-task-agent-edge--idle'
+        const markerColor = isActive ? 'rgba(121, 197, 255, 0.95)' : 'rgba(130, 168, 214, 0.78)'
+
+        return [
+          {
+            id: `task-link-${taskNode.id}-${linkedAgentNode.id}`,
+            source: taskNode.id,
+            target: linkedAgentNode.id,
+            type: 'bezier',
+            animated: isActive,
+            className: edgeClassName,
+            selectable: false,
+            focusable: false,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: markerColor,
+              width: 22,
+              height: 22,
+            },
+          },
+        ]
+      })
+  }, [nodes])
+
   return (
     <div ref={canvasRef} className="workspace-canvas" onClick={() => setContextMenu(null)}>
-      <ReactFlow<Node<TerminalNodeData>>
+      <ReactFlow<Node<TerminalNodeData>, Edge>
         nodes={nodes}
-        edges={[]}
+        edges={taskAgentEdges}
         nodeTypes={nodeTypes}
         onNodesChange={applyChanges}
         onPaneContextMenu={handlePaneContextMenu}
@@ -1819,7 +2479,7 @@ function WorkspaceCanvasInner({
           >
             <h3>New Task</h3>
             <p className="workspace-task-creator__meta">
-              Auto-title provider: {taskTitleProviderLabel} · Model: {taskTitleModelLabel}
+              Auto-task provider: {taskTitleProviderLabel} · Model: {taskTitleModelLabel}
             </p>
 
             <div className="workspace-task-creator__field-row">
@@ -1868,6 +2528,85 @@ function WorkspaceCanvasInner({
               />
             </div>
 
+            <div className="workspace-task-creator__field-grid">
+              <div className="workspace-task-creator__field-row">
+                <label htmlFor="workspace-task-priority">Priority</label>
+                <select
+                  id="workspace-task-priority"
+                  data-testid="workspace-task-priority"
+                  value={taskCreator.priority}
+                  disabled={taskCreator.isCreating || taskCreator.isGeneratingTitle}
+                  onChange={event => {
+                    const nextPriority = event.target.value as TaskPriority
+                    setTaskCreator(prev =>
+                      prev
+                        ? {
+                            ...prev,
+                            priority: nextPriority,
+                          }
+                        : prev,
+                    )
+                  }}
+                >
+                  {TASK_PRIORITY_OPTIONS.map(option => (
+                    <option value={option.value} key={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="workspace-task-creator__field-row">
+                <label>Tags (select from presets)</label>
+                <div
+                  className="workspace-task-creator__tag-options"
+                  data-testid="workspace-task-tag-options"
+                >
+                  {taskTagOptions.length > 0 ? (
+                    taskTagOptions.map(tag => {
+                      const checked = taskCreator.selectedTags.includes(tag)
+
+                      return (
+                        <label className="workspace-task-creator__tag-option" key={tag}>
+                          <input
+                            type="checkbox"
+                            data-testid={`workspace-task-tag-option-${tag}`}
+                            checked={checked}
+                            disabled={taskCreator.isCreating || taskCreator.isGeneratingTitle}
+                            onChange={event => {
+                              const isChecked = event.target.checked
+                              setTaskCreator(prev => {
+                                if (!prev) {
+                                  return prev
+                                }
+
+                                const nextSelected = isChecked
+                                  ? [...prev.selectedTags, tag]
+                                  : prev.selectedTags.filter(item => item !== tag)
+
+                                return {
+                                  ...prev,
+                                  selectedTags: normalizeTaskTagSelection(
+                                    nextSelected,
+                                    taskTagOptions,
+                                  ),
+                                }
+                              })
+                            }}
+                          />
+                          <span>{tag}</span>
+                        </label>
+                      )
+                    })
+                  ) : (
+                    <span className="workspace-task-creator__hint">
+                      No task tags configured. Add tags in Settings.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <label className="workspace-task-creator__checkbox">
               <input
                 type="checkbox"
@@ -1885,7 +2624,7 @@ function WorkspaceCanvasInner({
                   )
                 }}
               />
-              <span>Auto-generate title if empty</span>
+              <span>Auto-generate title/priority/tags when title is empty</span>
             </label>
 
             {taskCreator.error ? (
@@ -1895,6 +2634,7 @@ function WorkspaceCanvasInner({
             <div className="workspace-task-creator__actions">
               <button
                 type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--ghost"
                 data-testid="workspace-task-create-cancel"
                 disabled={taskCreator.isCreating || taskCreator.isGeneratingTitle}
                 onClick={() => {
@@ -1905,16 +2645,18 @@ function WorkspaceCanvasInner({
               </button>
               <button
                 type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--secondary"
                 data-testid="workspace-task-generate-title"
                 disabled={taskCreator.isCreating || taskCreator.isGeneratingTitle}
                 onClick={() => {
                   void generateTaskTitle()
                 }}
               >
-                {taskCreator.isGeneratingTitle ? 'Generating...' : 'Generate Title'}
+                {taskCreator.isGeneratingTitle ? 'Generating...' : 'Generate by AI'}
               </button>
               <button
                 type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--primary"
                 data-testid="workspace-task-create-submit"
                 disabled={taskCreator.isCreating || taskCreator.isGeneratingTitle}
                 onClick={() => {
@@ -1944,7 +2686,7 @@ function WorkspaceCanvasInner({
           >
             <h3>Edit Task</h3>
             <p className="workspace-task-creator__meta">
-              Auto-title provider: {taskTitleProviderLabel} · Model: {taskTitleModelLabel}
+              Auto-task provider: {taskTitleProviderLabel} · Model: {taskTitleModelLabel}
             </p>
 
             <div className="workspace-task-creator__field-row">
@@ -1996,6 +2738,85 @@ function WorkspaceCanvasInner({
               />
             </div>
 
+            <div className="workspace-task-creator__field-grid">
+              <div className="workspace-task-creator__field-row">
+                <label htmlFor="workspace-task-editor-priority">Priority</label>
+                <select
+                  id="workspace-task-editor-priority"
+                  data-testid="workspace-task-editor-priority"
+                  value={taskEditor.priority}
+                  disabled={taskEditor.isSaving || taskEditor.isGeneratingTitle}
+                  onChange={event => {
+                    const nextPriority = event.target.value as TaskPriority
+                    setTaskEditor(prev =>
+                      prev
+                        ? {
+                            ...prev,
+                            priority: nextPriority,
+                          }
+                        : prev,
+                    )
+                  }}
+                >
+                  {TASK_PRIORITY_OPTIONS.map(option => (
+                    <option value={option.value} key={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="workspace-task-creator__field-row">
+                <label>Tags (select from presets)</label>
+                <div
+                  className="workspace-task-creator__tag-options"
+                  data-testid="workspace-task-editor-tag-options"
+                >
+                  {taskTagOptions.length > 0 ? (
+                    taskTagOptions.map(tag => {
+                      const checked = taskEditor.selectedTags.includes(tag)
+
+                      return (
+                        <label className="workspace-task-creator__tag-option" key={tag}>
+                          <input
+                            type="checkbox"
+                            data-testid={`workspace-task-editor-tag-option-${tag}`}
+                            checked={checked}
+                            disabled={taskEditor.isSaving || taskEditor.isGeneratingTitle}
+                            onChange={event => {
+                              const isChecked = event.target.checked
+                              setTaskEditor(prev => {
+                                if (!prev) {
+                                  return prev
+                                }
+
+                                const nextSelected = isChecked
+                                  ? [...prev.selectedTags, tag]
+                                  : prev.selectedTags.filter(item => item !== tag)
+
+                                return {
+                                  ...prev,
+                                  selectedTags: normalizeTaskTagSelection(
+                                    nextSelected,
+                                    taskTagOptions,
+                                  ),
+                                }
+                              })
+                            }}
+                          />
+                          <span>{tag}</span>
+                        </label>
+                      )
+                    })
+                  ) : (
+                    <span className="workspace-task-creator__hint">
+                      No task tags configured. Add tags in Settings.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <label className="workspace-task-creator__checkbox">
               <input
                 type="checkbox"
@@ -2013,7 +2834,7 @@ function WorkspaceCanvasInner({
                   )
                 }}
               />
-              <span>Auto-generate title if empty</span>
+              <span>Auto-generate title/priority/tags when title is empty</span>
             </label>
 
             {taskEditor.error ? (
@@ -2023,6 +2844,7 @@ function WorkspaceCanvasInner({
             <div className="workspace-task-creator__actions">
               <button
                 type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--ghost"
                 data-testid="workspace-task-edit-cancel"
                 disabled={taskEditor.isSaving || taskEditor.isGeneratingTitle}
                 onClick={() => {
@@ -2033,16 +2855,18 @@ function WorkspaceCanvasInner({
               </button>
               <button
                 type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--secondary"
                 data-testid="workspace-task-edit-generate-title"
                 disabled={taskEditor.isSaving || taskEditor.isGeneratingTitle}
                 onClick={() => {
                   void generateTaskEditorTitle()
                 }}
               >
-                {taskEditor.isGeneratingTitle ? 'Generating...' : 'Generate Title'}
+                {taskEditor.isGeneratingTitle ? 'Generating...' : 'Generate by AI'}
               </button>
               <button
                 type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--primary"
                 data-testid="workspace-task-edit-submit"
                 disabled={taskEditor.isSaving || taskEditor.isGeneratingTitle}
                 onClick={() => {
@@ -2050,6 +2874,93 @@ function WorkspaceCanvasInner({
                 }}
               >
                 {taskEditor.isSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {taskAssigner ? (
+        <div
+          className="workspace-task-creator-backdrop"
+          onClick={() => {
+            closeTaskAssigner()
+          }}
+        >
+          <section
+            className="workspace-task-creator workspace-task-assigner"
+            data-testid="workspace-task-assigner"
+            onClick={event => {
+              event.stopPropagation()
+            }}
+          >
+            <h3>Assign Agent</h3>
+            <p className="workspace-task-creator__meta">
+              Task: {activeTaskForAssigner?.data.title ?? 'Unknown task'}
+            </p>
+
+            <div className="workspace-task-creator__field-row">
+              <label htmlFor="workspace-task-assign-select">Linked Agent</label>
+              <select
+                id="workspace-task-assign-select"
+                data-testid="workspace-task-assign-select"
+                value={taskAssigner.selectedAgentNodeId}
+                disabled={taskAssigner.isSaving}
+                onChange={event => {
+                  const nextAgentNodeId = event.target.value
+                  setTaskAssigner(prev =>
+                    prev
+                      ? {
+                          ...prev,
+                          selectedAgentNodeId: nextAgentNodeId,
+                          error: null,
+                        }
+                      : prev,
+                  )
+                }}
+              >
+                <option value="">Unassigned</option>
+                {taskAssignerAgentOptions.map(option => {
+                  const statusLabel = toAgentRuntimeLabel(option.status)
+                  const currentTaskLabel = option.linkedTaskTitle
+                    ? ` · ${option.linkedTaskTitle}`
+                    : ''
+
+                  return (
+                    <option value={option.nodeId} key={option.nodeId}>
+                      {`${option.title} (${statusLabel})${currentTaskLabel}`}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+
+            {taskAssigner.error ? (
+              <p className="workspace-task-creator__error">{taskAssigner.error}</p>
+            ) : null}
+
+            <div className="workspace-task-creator__actions">
+              <button
+                type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--ghost"
+                data-testid="workspace-task-assign-cancel"
+                disabled={taskAssigner.isSaving}
+                onClick={() => {
+                  closeTaskAssigner()
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="workspace-task-creator__action workspace-task-creator__action--primary"
+                data-testid="workspace-task-assign-submit"
+                disabled={taskAssigner.isSaving}
+                onClick={() => {
+                  void applyTaskAssignment()
+                }}
+              >
+                {taskAssigner.isSaving ? 'Saving...' : 'Apply'}
               </button>
             </div>
           </section>

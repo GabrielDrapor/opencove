@@ -1,15 +1,25 @@
+import { Handle, Position } from '@xyflow/react'
+import { Pencil } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { JSX, PointerEvent as ReactPointerEvent } from 'react'
-import type { Size, TaskRuntimeStatus } from '../types'
+import type { Size, TaskPriority, TaskRuntimeStatus } from '../types'
 
 interface TaskNodeProps {
   title: string
   requirement: string
   status: TaskRuntimeStatus
+  priority: TaskPriority
+  tags: string[]
+  createdAt: string | null
+  updatedAt: string | null
+  linkedAgentTitle: string | null
   width: number
   height: number
   onClose: () => void
-  onEdit: () => void
+  onOpenEditor: () => void
+  onQuickTitleSave: (title: string) => void
+  onQuickRequirementSave: (requirement: string) => void
+  onAssignAgent: () => void
   onRunAgent: () => void
   onResize: (size: Size) => void
   onStatusChange: (status: TaskRuntimeStatus) => void
@@ -27,14 +37,42 @@ const TASK_STATUS_OPTIONS: Array<{ value: TaskRuntimeStatus; label: string }> = 
   { value: 'done', label: 'DONE' },
 ]
 
+const TASK_PRIORITY_LABEL: Record<TaskPriority, string> = {
+  low: 'LOW',
+  medium: 'MEDIUM',
+  high: 'HIGH',
+  urgent: 'URGENT',
+}
+
+function formatTaskTimestamp(timestamp: string | null): string {
+  if (!timestamp) {
+    return '--'
+  }
+
+  const parsed = new Date(timestamp)
+  if (Number.isNaN(parsed.getTime())) {
+    return timestamp
+  }
+
+  return parsed.toISOString().replace('T', ' ').slice(0, 16)
+}
+
 export function TaskNode({
   title,
   requirement,
   status,
+  priority,
+  tags,
+  createdAt,
+  updatedAt,
+  linkedAgentTitle,
   width,
   height,
   onClose,
-  onEdit,
+  onOpenEditor,
+  onQuickTitleSave,
+  onQuickRequirementSave,
+  onAssignAgent,
   onRunAgent,
   onResize,
   onStatusChange,
@@ -50,6 +88,11 @@ export function TaskNode({
   const [isResizing, setIsResizing] = useState(false)
   const [draftSize, setDraftSize] = useState<Size | null>(null)
 
+  const [isTitleEditing, setIsTitleEditing] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(title)
+  const [isRequirementEditing, setIsRequirementEditing] = useState(false)
+  const [requirementDraft, setRequirementDraft] = useState(requirement)
+
   useEffect(() => {
     draftSizeRef.current = draftSize
   }, [draftSize])
@@ -63,6 +106,22 @@ export function TaskNode({
       setDraftSize(null)
     }
   }, [draftSize, height, isResizing, width])
+
+  useEffect(() => {
+    if (isTitleEditing) {
+      return
+    }
+
+    setTitleDraft(title)
+  }, [isTitleEditing, title])
+
+  useEffect(() => {
+    if (isRequirementEditing) {
+      return
+    }
+
+    setRequirementDraft(requirement)
+  }, [isRequirementEditing, requirement])
 
   const handleResizePointerDown = useCallback(
     (axis: ResizeAxis) => (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -123,6 +182,46 @@ export function TaskNode({
     }
   }, [height, isResizing, onResize, width])
 
+  const commitTitleEdit = useCallback(() => {
+    const normalized = titleDraft.trim()
+    if (normalized.length === 0) {
+      setTitleDraft(title)
+      setIsTitleEditing(false)
+      return
+    }
+
+    if (normalized !== title) {
+      onQuickTitleSave(normalized)
+    }
+
+    setIsTitleEditing(false)
+  }, [onQuickTitleSave, title, titleDraft])
+
+  const cancelTitleEdit = useCallback(() => {
+    setTitleDraft(title)
+    setIsTitleEditing(false)
+  }, [title])
+
+  const commitRequirementEdit = useCallback(() => {
+    const normalized = requirementDraft.trim()
+    if (normalized.length === 0) {
+      setRequirementDraft(requirement)
+      setIsRequirementEditing(false)
+      return
+    }
+
+    if (normalized !== requirement) {
+      onQuickRequirementSave(normalized)
+    }
+
+    setIsRequirementEditing(false)
+  }, [onQuickRequirementSave, requirement, requirementDraft])
+
+  const cancelRequirementEdit = useCallback(() => {
+    setRequirementDraft(requirement)
+    setIsRequirementEditing(false)
+  }, [requirement])
+
   const renderedSize = draftSize ?? { width, height }
   const style = useMemo(
     () => ({ width: renderedSize.width, height: renderedSize.height }),
@@ -137,37 +236,159 @@ export function TaskNode({
         event.stopPropagation()
       }}
     >
+      <Handle type="target" position={Position.Left} className="workspace-node-handle" />
+      <Handle type="source" position={Position.Right} className="workspace-node-handle" />
+
       <div className="task-node__header" data-node-drag-handle="true">
-        <span
-          className="task-node__title"
-          onDoubleClick={event => {
-            event.stopPropagation()
-            onEdit()
-          }}
-        >
-          {title}
-        </span>
-        <button
-          type="button"
-          className="task-node__close nodrag"
-          onClick={event => {
-            event.stopPropagation()
-            onClose()
-          }}
-        >
-          ×
-        </button>
+        <div className="task-node__header-main">
+          {isTitleEditing ? (
+            <input
+              className="task-node__title-input nodrag nowheel"
+              data-testid="task-node-inline-title-input"
+              value={titleDraft}
+              autoFocus
+              onPointerDown={event => {
+                event.stopPropagation()
+              }}
+              onChange={event => {
+                setTitleDraft(event.target.value)
+              }}
+              onBlur={() => {
+                commitTitleEdit()
+              }}
+              onKeyDown={event => {
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  cancelTitleEdit()
+                  return
+                }
+
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  commitTitleEdit()
+                }
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="task-node__title task-node__title-button nodrag"
+              data-testid="task-node-inline-title-trigger"
+              onClick={event => {
+                event.stopPropagation()
+                setTitleDraft(title)
+                setIsTitleEditing(true)
+              }}
+            >
+              {title}
+            </button>
+          )}
+
+          <span className="task-node__timestamps" data-testid="task-node-timestamps">
+            <span>Created {formatTaskTimestamp(createdAt)}</span>
+            <span>Updated {formatTaskTimestamp(updatedAt)}</span>
+          </span>
+        </div>
+
+        <div className="task-node__header-actions nodrag">
+          <button
+            type="button"
+            className="task-node__icon-button task-node__icon-button--edit nodrag"
+            data-testid="task-node-open-editor"
+            onClick={event => {
+              event.stopPropagation()
+              onOpenEditor()
+            }}
+            aria-label="Open full task editor"
+            title="Open full task editor"
+          >
+            <Pencil size={14} strokeWidth={2.2} />
+          </button>
+
+          <button
+            type="button"
+            className="task-node__icon-button task-node__icon-button--close nodrag"
+            data-testid="task-node-close"
+            onClick={event => {
+              event.stopPropagation()
+              onClose()
+            }}
+            aria-label="Delete task"
+            title="Delete task"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
-      <div
-        className="task-node__content"
-        onDoubleClick={event => {
-          event.stopPropagation()
-          onEdit()
-        }}
-      >
+      <div className="task-node__meta" data-testid="task-node-meta">
+        <span className={`task-node__priority task-node__priority--${priority}`}>
+          {TASK_PRIORITY_LABEL[priority]}
+        </span>
+
+        <span className="task-node__tags" data-testid="task-node-tags">
+          {tags.length > 0 ? (
+            tags.map(tag => (
+              <span key={tag} className="task-node__tag">
+                #{tag}
+              </span>
+            ))
+          ) : (
+            <span className="task-node__tag task-node__tag--empty">No tags</span>
+          )}
+        </span>
+
+        <span className="task-node__linked-agent" data-testid="task-node-linked-agent">
+          {linkedAgentTitle ? `Agent · ${linkedAgentTitle}` : 'Agent · Unassigned'}
+        </span>
+      </div>
+
+      <div className="task-node__content">
         <label>Task Requirement</label>
-        <p>{requirement}</p>
+        {isRequirementEditing ? (
+          <div className="task-node__inline-editor">
+            <textarea
+              className="task-node__requirement-input nodrag nowheel"
+              data-testid="task-node-inline-requirement-input"
+              value={requirementDraft}
+              autoFocus
+              onPointerDown={event => {
+                event.stopPropagation()
+              }}
+              onChange={event => {
+                setRequirementDraft(event.target.value)
+              }}
+              onBlur={() => {
+                commitRequirementEdit()
+              }}
+              onKeyDown={event => {
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  cancelRequirementEdit()
+                  return
+                }
+
+                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                  event.preventDefault()
+                  commitRequirementEdit()
+                }
+              }}
+            />
+            <span className="task-node__inline-hint">Ctrl/Cmd+Enter to save · Esc to cancel</span>
+          </div>
+        ) : (
+          <p
+            className="task-node__requirement-text"
+            data-testid="task-node-inline-requirement-trigger"
+            onClick={event => {
+              event.stopPropagation()
+              setRequirementDraft(requirement)
+              setIsRequirementEditing(true)
+            }}
+          >
+            {requirement}
+          </p>
+        )}
       </div>
 
       <div className="task-node__footer nodrag">
@@ -187,14 +408,14 @@ export function TaskNode({
 
         <button
           type="button"
-          className="task-node__edit"
-          data-testid="task-node-edit"
+          className="task-node__assign-agent"
+          data-testid="task-node-assign-agent"
           onClick={event => {
             event.stopPropagation()
-            onEdit()
+            onAssignAgent()
           }}
         >
-          Edit
+          Assign
         </button>
 
         <button
