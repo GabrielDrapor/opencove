@@ -35,7 +35,9 @@
     "lint:fix": "oxlint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "secret-check:staged": "node scripts/check-secrets-staged.mjs",
     "secrets:scan": "secretlint \"**/*\"",
+    "line-check:staged": "node scripts/check-max-lines.mjs",
     "prepare": "husky"
   },
   "dependencies": {
@@ -91,12 +93,17 @@
     "vitest": "^4.0.18"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
+      "node scripts/check-max-lines.mjs",
       "oxlint --fix",
       "prettier --write"
     ],
-    "*.{json,md}": [
+    "*.{css,scss,less,html,json,md,yaml,yml}": [
+      "node scripts/check-max-lines.mjs",
       "prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,css,scss,less,html,json,md,yaml,yml,env,sh,txt}": [
+      "node scripts/check-secrets-staged.mjs"
     ]
   }
 }
