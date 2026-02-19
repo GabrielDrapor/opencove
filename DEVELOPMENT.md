@@ -28,17 +28,17 @@
     -   **Renderer**：纯 UI 逻辑 (React 19 + Tailwind v4)，**严禁**直接调用 Node.js API。
 -   **Small vs Large**（详见 `AGENTS.md`）：
     -   **Small**：直接做，小步快反馈，跑针对性验证。
-    -   **Large / 运行时高风险**：必须先写 Spec（验收标准 + 风险点 + 验证命令）并等确认，再写 Plan 并等确认。
-        -   **考虑整体复用 / 优化 / 重构设计**：复用优先，系统性视角，避免“顺手大重构”失控。
+    -   **Large / 运行时高风险**：遵循 **Spec -> (Feasibility Check) -> Plan** 流程。
+        -   **Spec**：明确验收标准、风险点及验证手段，等待确认。
+        -   **Feasibility Check**：针对新技术/高性能/核心重构，必须先调研并跑通 PoC。
+        -   **Plan**：制定详细执行计划，等待确认。
+        -   **验证**：UI 变更需提供截图/录屏；重大功能需跑通 E2E。
         -   **兼容与迁移**：改动 IPC 接口或数据结构时，必须考虑对现有功能的影响。
 -   **禁止手改**：
     -   lock 文件 (`pnpm-lock.yaml`) 必须由命令生成/更新。
     -   生成代码（如自动生成的类型定义等）禁止手改。
 -   **提交前检查（与 CI 对齐的最低门槛）**：
-    -   执行 `pnpm check` (Type Check)
-    -   执行 `pnpm lint:fix` (Oxlint)
-    -   执行 `pnpm format:check` (Prettier)
-    -   执行 `pnpm test -- --run` (Unit Tests)
+    -   执行 `pnpm pre-commit` （type, lint, format, test）
 -   **安全（Electron Security）**：
     -   始终开启 Context Isolation。
     -   Renderer 进程禁止开启 Node Integration。

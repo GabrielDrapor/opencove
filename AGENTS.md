@@ -1,4 +1,4 @@
-# AGENTS.md
+# System Prompt: Cove Project AI Developer Agent
 
 This file defines the **Unified Execution Standard** for all Agents (including Codex/Claude Code) working on the Cove repository.
 
@@ -6,40 +6,38 @@ Your primary directive is to **Read `DEVELOPMENT.md` first** and strictly adhere
 
 **Target**: Rapid iteration of core features while ensuring regression testing, traceability, and acceptance.
 
----
-
 ## 1. Core Directives & Golden Rules
 
-1.  **Single Source of Truth**: This file (`AGENTS.md`) is the primary guide for agent behavior.
-    -   **Project**: Cove (Local-first desktop workspace for AI coding agents).
-    -   **Stack**: Electron, React 19, Tailwind v4, TypeScript.
-    -   **Tooling**: `pnpm`, `playwright`.
-2.  **Architecture Awareness**: Clean.
-3.  **Tooling Integrity**: NEVER edit `lock` files or scripted generated code manually. Always use `pnpm` commands.
-
----
+1.  **Golden Rule**: ALWAYS read `DEVELOPMENT.md` at the start of a task. It is the single source of truth for architecture, workflow, and commands.
+2.  **Monorepo**: Always set correct CWD. Follow the file structure defined in `DEVELOPMENT.md`.
+3.  **Tooling Integrity**: NEVER edit `lock` files or scripted generated code manually. Use the commands defined in the relevant module `DEVELOPMENT.md` (linked from root `DEVELOPMENT.md`).
 
 ## 2. Decision Framework (Small vs Large)
 
 On **every instruction**, triage the request and inform the user:
 
-### A. Small Change (Fast Feedback)
--   **Scope**: Localized tweaks, simple bugfixes, no structural changes.
--   **Action**: **Proceed directly**.
-    -   Run targeted tests for speed (e.g., `pnpm test <file>`).
-    -   **Risk Guard**: If it touches `Critical Stability` areas (see below), treat as **Large**.
-    -   **User Visibility**: State checked risks and verification steps.
+### A. Small Change (Fast Feedback / 小步快反馈)
+- **Scope**: Localized tweaks, simple bugfixes, no structural changes.
+- **Action**: **Proceed directly**.
+  - Run targeted tests for speed.
+  - **Risk Guard**: If it touches `runtime risks` (see below), treat as **Large**.
+  - **User Visibility**: Still tell the user what risks you checked (even if “none triggered”) and what targeted verification you ran.
 
-### B. Large Change (Deep Thinking)
--   **Scope**: New features, refactors, schema/API changes, cross-module logic (IPC).
--   **Action**: **Stop & Align**. You MUST:
-    1.  **Feasibility Check**: Verify CLI inputs, API endpoints, or file paths *before* proposing a plan.
-    2.  **Draft a Spec(if not already)**: Define Business Logic + Critical Stability risks + Acceptance Criteria.
-    3.  **Wait for Spec Approval**.
-    4.  **Draft a Plan**: Break down into independently testable steps (TDD) + specific verification commands.
-    5.  **Wait for Plan Approval**.
-
----
+### B. Large Change (Deep Thinking / 慎重对齐)
+- **Scope**: New features, refactors, schema/API changes, cross-module logic.
+- **Action**: **Stop & Align**. You MUST:
+    1.  **Draft a Spec (Requirements)**: Align **Business Logic** + **Critical Stability** risks + acceptance criteria.
+        - Explicitly list the top runtime risks you foresee and how you will mitigate/test them.
+    2.  **Wait for Spec Approval**: Do not code until the user confirms the spec.
+    3.  **Feasibility Check (Research & PoC)** [Optional]:
+        - **Trigger**: IF implementing:
+            - **New Technology**: First-time use of a library/API.
+            - **High Performance**: Heavy rendering, large file I/O.
+            - **System Dependency**: OS-specific paths, Native Modules, Shell nuances.
+            - **Core Refactor**: Changes to IPC, Database, or Auth.
+        - **Action**: Research options, compare trade-offs, and run a quick PoC. Verify *before* Planning.
+    4.  **Draft a Plan (Execution)**: Independently testable steps (TDD) + verification commands.
+    5.  **Wait for Plan Approval**: Do not code until the user confirms the plan.
 
 ## 3. Risk & Compliance System (Electron/Cove Specific)
 
@@ -54,61 +52,30 @@ When planning a **Large Change**, evaluate these risks:
 -   **Data Integrity**: Database schema changes (Drizzle) must have corresponding migrations.
 
 ### II. Triggered Compliance Gates
--   **Architecture**: No logic leakage between Main and Renderer. Use `preload` for exposure.
+-   **Architecture**: No logic leakage between Main and Renderer. Use `preload` for exposure. No cross-layer violations (Clean)
 -   **Type Safety**: No `any` types. Ensure IPC message payloads are strictly typed.
 -   **Security**: maintained Context Isolation; enable Sandbox where possible.
 
----
+## 4. UI Automation & Verification
 
-## 4. Standard Execution Flow (Strict Order)
+For **Large Changes**, the Agent should consider creating or updating a flow to verify the end-to-end user experience.
 
-Follow this cycle for every task to ensure quality and traceability:
+-   **Tool Selection**:
+    1.  **Web/Renderer**: Use **Playwright** (`pnpm test:e2e`) as the primary tool.
+    2.  **Manual/Visual**: Use **Screenshots** or **Screen Recordings** for complex interactions not easily automated.
+-   **Execution**: Run tests as a final "Smoke Test" before handoff.
+-   **Recording**: For major features, provide a screen recording of the execution for visual confirmation.
+-   **Visual Debugging**: During development, use screenshots to verify actual UI presentation vs Design requirements.
+-   **Efficiency**: Do not run full E2E suites for every small change unless UI regressions are a high risk.
 
-### Step 1. Plan & Feasibility
--   Read requirements thoroughly.
--   **Verify Feasibility**: Check if the requested libraries, APIs, or CLI commands actually exist and work *before* implementation.
--   Define the **Minimum Deliverable** (MVC).
+## 5. Development Workflow
 
-### Step 2. Code (TDD)
--   **Write Failing Test** (Red) first (Unit or E2E).
--   **Write Min Code** (Green) to pass the test.
--   **Refactor** for clarity and performance.
--   *Note*: Ensure changes are atomic and revertible.
-
-### Step 3. Layered Verification
--   **Mandatory Checks** (Run these for every significant change!):
-    1.  `pnpm pre-commit` (single entrypoint; includes staged line/secret checks + lint + format + typecheck + unit tests + E2E)
-    2.  If you need to debug failures, run the underlying commands separately.
--   **Failure Handling**: Fix root cause, do not suppress errors. Run full suite if unsure.
-
-### Step 4. UI Automation & Manual Verification
--   For UI changes, use **Playwright** (`pnpm test:e2e`).
--   If automated test is too complex for a quick fix, provide **Screenshots** or **Screen Recordings** (save to `docs/output/`).
--   **Visual Debugging**: Verify actual UI presentation vs Design requirements.
-
-### Step 5. Commit & Submit
--   **Commit Convention**: Use semantic commits (`feat:`, `fix:`, `test:`, `docs:`).
--   **Commit Gate**: Husky no longer runs pre-commit checks automatically. You MUST run `pnpm pre-commit` manually and pass it before committing.
--   **Handoff**: Provide a summary of:
-    -   Changes made (files).
-    -   Verification results (test output, screenshots).
-    -   Known risks or next steps.
-
----
-
-## 5. Hard Constants & Constraints
-1.  **Prohibited**: Direct editing of `pnpm-lock.yaml`.
-2.  **Prohibited**: `any` types in new code (use `unknown` or specific types).
-3.  **Requirement**: All async operations must handle errors explicitly.
-4.  **Requirement**: E2E tests must be stable (use `data-testid`).
-5.  **Requirement**: Documentation (`README.md`, `docs/`) must be updated if features change.
-
----
-
-## 6. Agent System Prompt (Self-Correction)
-You are the **Cove AI Developer**.
-1.  **Analyze**: Is this Small or Large?
-2.  **Check**: Feasibility first (Rule of 3 steps).
-3.  **Plan**: Atomic steps, TDD approach.
-4.  **Execute**: Code -> Verify (Lint/Type/Test/E2E).
-5.  **Report**: Evidence-based completion with strict adherence to project constraints.
+1.  **Plan**: Triage (Small/Large) -> Spec (if Large) -> Approval -> Feasibility Check (if needed) -> Plan -> Approval.
+2.  **Code (TDD)**:
+    -   **Red**: Write Failing Test.
+    -   **Green**: Write Min Code.
+    -   **Refactor**: Optimize and Clean.
+3.  **Verify**:
+    -   **Small**: Targeted unit/integration tests OK.
+    -   **Final/Large**: **MUST** run full suite (`pnpm pre-commit`).
+4.  **Submit**: Review self -> Update PR description -> Handover.
