@@ -29,6 +29,7 @@ vi.mock('@xterm/xterm', () => {
 
     public cols = 80
     public rows = 24
+    public options = { fontSize: 13 }
     public written: string[] = []
     private dataListener: ((data: string) => void) | null = null
 
@@ -45,6 +46,8 @@ vi.mock('@xterm/xterm', () => {
     public refresh(): void {}
 
     public dispose(): void {}
+
+    public attachCustomKeyEventHandler(): void {}
 
     public onData(listener: (data: string) => void) {
       this.dataListener = listener
@@ -145,6 +148,7 @@ describe('TerminalNode hydration buffering', () => {
         lastError={null}
         width={520}
         height={360}
+        terminalFontSize={13}
         scrollback={null}
         onClose={() => undefined}
         onResize={() => undefined}

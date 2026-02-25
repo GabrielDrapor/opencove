@@ -8,6 +8,16 @@ export const CANVAS_INPUT_MODES = ['auto', 'mouse', 'trackpad'] as const
 
 export type CanvasInputMode = (typeof CANVAS_INPUT_MODES)[number]
 
+export const MIN_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT = 60
+export const MAX_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT = 120
+export const MIN_TERMINAL_FONT_SIZE = 10
+export const MAX_TERMINAL_FONT_SIZE = 22
+export const MIN_UI_FONT_SIZE = 14
+export const MAX_UI_FONT_SIZE = 24
+
+const MIN_LEGACY_UI_FONT_SCALE_PERCENT = 85
+const MAX_LEGACY_UI_FONT_SCALE_PERCENT = 140
+
 export const AGENT_PROVIDER_LABEL: Record<AgentProvider, string> = {
   'claude-code': 'Claude Code',
   codex: 'Codex',
@@ -35,6 +45,9 @@ export interface AgentSettings {
   taskTagOptions: string[]
   normalizeZoomOnTerminalClick: boolean
   canvasInputMode: CanvasInputMode
+  defaultTerminalWindowScalePercent: number
+  terminalFontSize: number
+  uiFontSize: number
 }
 
 export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
@@ -56,6 +69,9 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
   taskTagOptions: ['feature', 'bug', 'refactor', 'docs', 'test'],
   normalizeZoomOnTerminalClick: true,
   canvasInputMode: 'auto',
+  defaultTerminalWindowScalePercent: 80,
+  terminalFontSize: 13,
+  uiFontSize: 18,
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -96,6 +112,20 @@ function normalizeBoolean(value: unknown): boolean | null {
   }
 
   return value
+}
+
+function normalizeIntegerInRange(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return fallback
+  }
+
+  const normalized = Math.round(value)
+  return Math.max(min, Math.min(max, normalized))
 }
 
 function normalizeModelOptions(value: unknown): string[] {
@@ -231,6 +261,31 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
   const canvasInputMode = isValidCanvasInputMode(value.canvasInputMode)
     ? value.canvasInputMode
     : DEFAULT_AGENT_SETTINGS.canvasInputMode
+  const defaultTerminalWindowScalePercent = normalizeIntegerInRange(
+    value.defaultTerminalWindowScalePercent,
+    DEFAULT_AGENT_SETTINGS.defaultTerminalWindowScalePercent,
+    MIN_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT,
+    MAX_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT,
+  )
+  const terminalFontSize = normalizeIntegerInRange(
+    value.terminalFontSize,
+    DEFAULT_AGENT_SETTINGS.terminalFontSize,
+    MIN_TERMINAL_FONT_SIZE,
+    MAX_TERMINAL_FONT_SIZE,
+  )
+  const legacyUiFontScalePercent = normalizeIntegerInRange(
+    value.uiFontScalePercent,
+    Math.round((DEFAULT_AGENT_SETTINGS.uiFontSize / 16) * 100),
+    MIN_LEGACY_UI_FONT_SCALE_PERCENT,
+    MAX_LEGACY_UI_FONT_SCALE_PERCENT,
+  )
+  const fallbackUiFontSize = Math.round((legacyUiFontScalePercent / 100) * 16)
+  const uiFontSize = normalizeIntegerInRange(
+    value.uiFontSize,
+    fallbackUiFontSize,
+    MIN_UI_FONT_SIZE,
+    MAX_UI_FONT_SIZE,
+  )
 
   return {
     defaultProvider,
@@ -242,5 +297,8 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
     taskTagOptions,
     normalizeZoomOnTerminalClick,
     canvasInputMode,
+    defaultTerminalWindowScalePercent,
+    terminalFontSize,
+    uiFontSize,
   }
 }

@@ -1,4 +1,4 @@
-import { useMemo, type MutableRefObject } from 'react'
+import { useMemo, type MutableRefObject, type ReactElement } from 'react'
 import type { Node } from '@xyflow/react'
 import { TaskNode } from '../TaskNode'
 import { TerminalNode } from '../TerminalNode'
@@ -12,6 +12,7 @@ import type {
 
 interface WorkspaceCanvasNodeTypesParams {
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
+  terminalFontSize: number
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNodeScrollbackRef: MutableRefObject<UpdateNodeScrollback>
@@ -32,6 +33,7 @@ interface WorkspaceCanvasNodeTypesParams {
 
 export function useWorkspaceCanvasNodeTypes({
   nodesRef,
+  terminalFontSize,
   closeNodeRef,
   resizeNodeRef,
   updateNodeScrollbackRef,
@@ -50,7 +52,7 @@ export function useWorkspaceCanvasNodeTypes({
   renameTerminalTitleRef,
 }: WorkspaceCanvasNodeTypesParams): Record<
   string,
-  (props: { data: TerminalNodeData; id: string }) => JSX.Element | null
+  (props: { data: TerminalNodeData; id: string }) => ReactElement | null
 > {
   return useMemo(
     () => ({
@@ -63,6 +65,7 @@ export function useWorkspaceCanvasNodeTypes({
           lastError={data.lastError}
           width={data.width}
           height={data.height}
+          terminalFontSize={terminalFontSize}
           scrollback={data.scrollback}
           onClose={() => {
             void closeNodeRef.current(id)
@@ -160,6 +163,7 @@ export function useWorkspaceCanvasNodeTypes({
       closeNodeRef,
       normalizeViewportForTerminalInteractionRef,
       nodesRef,
+      terminalFontSize,
       openTaskAssignerRef,
       openTaskEditorRef,
       quickUpdateTaskRequirementRef,

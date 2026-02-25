@@ -4,6 +4,10 @@
   padding: 0;
 }
 
+:root {
+  --cove-ui-font-scale: 1;
+}
+
 html,
 body,
 #root {
@@ -18,6 +22,7 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
+  font-size: calc(16px * var(--cove-ui-font-scale));
   background: radial-gradient(circle at 20% 20%, #101c35 0%, #060a14 55%, #04070f 100%);
   color: #e5edff;
 }

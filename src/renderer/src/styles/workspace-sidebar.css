@@ -16,7 +16,7 @@
 }
 
 .workspace-sidebar__header h1 {
-  font-size: 18px;
+  font-size: calc(18px * var(--cove-ui-font-scale));
   font-weight: 600;
   color: #f0f6ff;
 }
@@ -29,7 +29,7 @@
 }
 
 .workspace-sidebar__space-label {
-  font-size: 11px;
+  font-size: calc(11px * var(--cove-ui-font-scale));
   color: #91a6d4;
   white-space: nowrap;
   overflow: hidden;
@@ -48,7 +48,7 @@
   border-radius: 8px;
   padding: 6px 12px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: calc(13px * var(--cove-ui-font-scale));
 }
 
 .workspace-sidebar__header button:hover,
@@ -71,17 +71,17 @@
 }
 
 .workspace-sidebar__agent-label {
-  font-size: 11px;
+  font-size: calc(11px * var(--cove-ui-font-scale));
   color: #91a6d4;
 }
 
 .workspace-sidebar__agent-provider {
-  font-size: 13px;
+  font-size: calc(13px * var(--cove-ui-font-scale));
   color: #e9f1ff;
 }
 
 .workspace-sidebar__agent-model {
-  font-size: 12px;
+  font-size: calc(12px * var(--cove-ui-font-scale));
   color: #b7c8eb;
 }
 
@@ -92,12 +92,12 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: calc(12px * var(--cove-ui-font-scale));
   line-height: 1.35;
 }
 
 .workspace-sidebar__persist-alert strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--cove-ui-font-scale));
   font-weight: 600;
   color: #e9f1ff;
 }
@@ -130,7 +130,7 @@
 }
 
 .workspace-sidebar__empty {
-  font-size: 13px;
+  font-size: calc(13px * var(--cove-ui-font-scale));
   color: #7f93bb;
 }
 
@@ -157,12 +157,12 @@
 }
 
 .workspace-item__name {
-  font-size: 14px;
+  font-size: calc(14px * var(--cove-ui-font-scale));
   font-weight: 600;
 }
 
 .workspace-item__path {
-  font-size: 11px;
+  font-size: calc(11px * var(--cove-ui-font-scale));
   color: #91a6d4;
   white-space: nowrap;
   overflow: hidden;
@@ -170,7 +170,7 @@
 }
 
 .workspace-item__meta {
-  font-size: 11px;
+  font-size: calc(11px * var(--cove-ui-font-scale));
   color: #b2c3e5;
 }
 

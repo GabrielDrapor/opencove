@@ -31,6 +31,7 @@ export function TerminalNode({
   lastError,
   width,
   height,
+  terminalFontSize,
   scrollback,
   onClose,
   onResize,
@@ -156,7 +157,7 @@ export function TerminalNode({
       cursorBlink: true,
       fontFamily:
         'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-      fontSize: 12,
+      fontSize: terminalFontSize,
       theme: {
         background: '#0a0f1d',
         foreground: '#d6e4ff',
@@ -172,7 +173,7 @@ export function TerminalNode({
     terminalRef.current = terminal
     fitAddonRef.current = fitAddon
 
-    let disposeXtermPasteGuards = () => undefined
+    let disposeXtermPasteGuards: () => void = () => undefined
     const ptyWriteQueue = createPtyWriteQueue(data => window.coveApi.pty.write({ sessionId, data }))
     terminal.attachCustomKeyEventHandler(event => {
       if (
@@ -378,6 +379,16 @@ export function TerminalNode({
     sessionId,
     syncTerminalSize,
   ])
+
+  useEffect(() => {
+    const terminal = terminalRef.current
+    if (!terminal) {
+      return
+    }
+
+    terminal.options.fontSize = terminalFontSize
+    syncTerminalSize()
+  }, [syncTerminalSize, terminalFontSize])
 
   useEffect(() => {
     const frame = requestAnimationFrame(syncTerminalSize)

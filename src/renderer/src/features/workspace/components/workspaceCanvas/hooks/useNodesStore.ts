@@ -6,17 +6,19 @@ import {
   findNearestFreePosition,
   isPositionAvailable,
 } from '../../../utils/collision'
-import { DEFAULT_SIZE, MIN_SIZE, TASK_SIZE } from '../constants'
+import { MIN_SIZE, TASK_SIZE, resolveDefaultTerminalWindowSize } from '../constants'
 import type { CreateNodeInput } from '../types'
 
 export function useWorkspaceCanvasNodesStore({
   nodes,
   onNodesChange,
   onRequestPersistFlush,
+  defaultTerminalWindowScalePercent,
 }: {
   nodes: Node<TerminalNodeData>[]
   onNodesChange: (nodes: Node<TerminalNodeData>[]) => void
   onRequestPersistFlush?: () => void
+  defaultTerminalWindowScalePercent: number
 }): {
   nodesRef: React.MutableRefObject<Node<TerminalNodeData>[]>
   pendingScrollbackByNodeRef: React.MutableRefObject<Map<string, string>>
@@ -365,8 +367,9 @@ export function useWorkspaceCanvasNodesStore({
       agent,
     }: CreateNodeInput): Promise<Node<TerminalNodeData> | null> => {
       const currentNodes = nodesRef.current
-      const nonOverlappingPosition = findNearestFreePosition(anchor, DEFAULT_SIZE, currentNodes)
-      const canPlace = isPositionAvailable(nonOverlappingPosition, DEFAULT_SIZE, currentNodes)
+      const defaultSize = resolveDefaultTerminalWindowSize(defaultTerminalWindowScalePercent)
+      const nonOverlappingPosition = findNearestFreePosition(anchor, defaultSize, currentNodes)
+      const canPlace = isPositionAvailable(nonOverlappingPosition, defaultSize, currentNodes)
 
       if (!canPlace) {
         await window.coveApi.pty.kill({ sessionId })
@@ -384,8 +387,8 @@ export function useWorkspaceCanvasNodesStore({
           sessionId,
           title,
           titlePinnedByUser: false,
-          width: DEFAULT_SIZE.width,
-          height: DEFAULT_SIZE.height,
+          width: defaultSize.width,
+          height: defaultSize.height,
           kind,
           status: kind === 'agent' ? 'running' : null,
           startedAt: kind === 'agent' ? now : null,
@@ -404,7 +407,7 @@ export function useWorkspaceCanvasNodesStore({
       onRequestPersistFlush?.()
       return nextNode
     },
-    [onRequestPersistFlush, setNodes],
+    [defaultTerminalWindowScalePercent, onRequestPersistFlush, setNodes],
   )
 
   const createTaskNode = useCallback(

@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react'
 import {
   AGENT_PROVIDER_LABEL,
+  MAX_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT,
+  MAX_TERMINAL_FONT_SIZE,
+  MAX_UI_FONT_SIZE,
+  MIN_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT,
+  MIN_TERMINAL_FONT_SIZE,
+  MIN_UI_FONT_SIZE,
   resolveAgentModel,
   resolveTaskTitleProvider,
   type AgentProvider,
@@ -119,6 +125,48 @@ export function SettingsPanel({
     onChange({
       ...settings,
       canvasInputMode: mode,
+    })
+  }
+
+  const updateDefaultTerminalWindowScalePercent = (percent: number): void => {
+    if (!Number.isFinite(percent)) {
+      return
+    }
+
+    const next = Math.max(
+      MIN_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT,
+      Math.min(MAX_DEFAULT_TERMINAL_WINDOW_SCALE_PERCENT, Math.round(percent)),
+    )
+
+    onChange({
+      ...settings,
+      defaultTerminalWindowScalePercent: next,
+    })
+  }
+
+  const updateTerminalFontSize = (fontSize: number): void => {
+    if (!Number.isFinite(fontSize)) {
+      return
+    }
+
+    const next = Math.max(MIN_TERMINAL_FONT_SIZE, Math.min(MAX_TERMINAL_FONT_SIZE, fontSize))
+
+    onChange({
+      ...settings,
+      terminalFontSize: Math.round(next),
+    })
+  }
+
+  const updateUiFontSize = (fontSize: number): void => {
+    if (!Number.isFinite(fontSize)) {
+      return
+    }
+
+    const next = Math.max(MIN_UI_FONT_SIZE, Math.min(MAX_UI_FONT_SIZE, Math.round(fontSize)))
+
+    onChange({
+      ...settings,
+      uiFontSize: next,
     })
   }
 
@@ -301,11 +349,23 @@ export function SettingsPanel({
             <CanvasSection
               canvasInputMode={settings.canvasInputMode}
               normalizeZoomOnTerminalClick={settings.normalizeZoomOnTerminalClick}
+              defaultTerminalWindowScalePercent={settings.defaultTerminalWindowScalePercent}
+              terminalFontSize={settings.terminalFontSize}
+              uiFontSize={settings.uiFontSize}
               onChangeCanvasInputMode={mode => {
                 updateCanvasInputMode(mode)
               }}
               onChangeNormalizeZoomOnTerminalClick={enabled => {
                 updateNormalizeZoomOnTerminalClick(enabled)
+              }}
+              onChangeDefaultTerminalWindowScalePercent={percent => {
+                updateDefaultTerminalWindowScalePercent(percent)
+              }}
+              onChangeTerminalFontSize={size => {
+                updateTerminalFontSize(size)
+              }}
+              onChangeUiFontSize={size => {
+                updateUiFontSize(size)
               }}
             />
 

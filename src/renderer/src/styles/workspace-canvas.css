@@ -13,7 +13,7 @@
 }
 
 .workspace-empty-state h2 {
-  font-size: 24px;
+  font-size: calc(24px * var(--cove-ui-font-scale));
   margin-bottom: 4px;
 }
 

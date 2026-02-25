@@ -48,6 +48,12 @@ export default function App(): React.JSX.Element {
   activeWorkspaceIdRef.current = activeWorkspaceId
   agentSettingsRef.current = agentSettings
 
+  useEffect(() => {
+    const root = document.documentElement
+    const uiFontScale = (agentSettings.uiFontSize / 16).toFixed(2)
+    root.style.setProperty('--cove-ui-font-scale', uiFontScale)
+  }, [agentSettings.uiFontSize])
+
   const producePersistedState = useCallback(
     () =>
       toPersistedState(

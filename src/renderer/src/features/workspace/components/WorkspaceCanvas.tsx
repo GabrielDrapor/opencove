@@ -99,6 +99,7 @@ function WorkspaceCanvasInner({
     nodes,
     onNodesChange,
     onRequestPersistFlush,
+    defaultTerminalWindowScalePercent: agentSettings.defaultTerminalWindowScalePercent,
   })
 
   const {
@@ -294,7 +295,11 @@ function WorkspaceCanvasInner({
 
   useWorkspaceCanvasPtyTaskCompletion({ setNodes })
 
-  const nodeTypes = useWorkspaceCanvasNodeTypes({ nodesRef, ...actionRefs })
+  const nodeTypes = useWorkspaceCanvasNodeTypes({
+    nodesRef,
+    terminalFontSize: agentSettings.terminalFontSize,
+    ...actionRefs,
+  })
 
   const {
     clearNodeSelection,

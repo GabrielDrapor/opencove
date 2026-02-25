@@ -13,6 +13,9 @@ describe('agent settings normalization', () => {
     expect(normalizeAgentSettings('invalid')).toEqual(DEFAULT_AGENT_SETTINGS)
     expect(DEFAULT_AGENT_SETTINGS.normalizeZoomOnTerminalClick).toBe(true)
     expect(DEFAULT_AGENT_SETTINGS.canvasInputMode).toBe('auto')
+    expect(DEFAULT_AGENT_SETTINGS.defaultTerminalWindowScalePercent).toBe(80)
+    expect(DEFAULT_AGENT_SETTINGS.terminalFontSize).toBe(13)
+    expect(DEFAULT_AGENT_SETTINGS.uiFontSize).toBe(18)
   })
 
   it('keeps valid provider, custom model, and model option fields', () => {
@@ -35,6 +38,9 @@ describe('agent settings normalization', () => {
       taskTagOptions: ['feature', 'bug', 'feature', ''],
       normalizeZoomOnTerminalClick: false,
       canvasInputMode: 'trackpad',
+      defaultTerminalWindowScalePercent: 95,
+      terminalFontSize: 15,
+      uiFontSize: 21,
     })
 
     expect(result.defaultProvider).toBe('codex')
@@ -52,6 +58,9 @@ describe('agent settings normalization', () => {
     expect(result.taskTagOptions).toEqual(['feature', 'bug'])
     expect(result.normalizeZoomOnTerminalClick).toBe(false)
     expect(result.canvasInputMode).toBe('trackpad')
+    expect(result.defaultTerminalWindowScalePercent).toBe(95)
+    expect(result.terminalFontSize).toBe(15)
+    expect(result.uiFontSize).toBe(21)
     expect(resolveTaskTitleProvider(result)).toBe('claude-code')
     expect(resolveTaskTitleModel(result)).toBe('claude-opus-4-6')
     expect(resolveAgentModel(result, 'claude-code')).toBe('claude-opus-4-6')
@@ -87,6 +96,9 @@ describe('agent settings normalization', () => {
     expect(result.taskTagOptions).toEqual(['ops'])
     expect(result.normalizeZoomOnTerminalClick).toBe(true)
     expect(result.canvasInputMode).toBe('auto')
+    expect(result.defaultTerminalWindowScalePercent).toBe(80)
+    expect(result.terminalFontSize).toBe(13)
+    expect(result.uiFontSize).toBe(18)
     expect(resolveAgentModel(result, 'claude-code')).toBeNull()
     expect(resolveAgentModel(result, 'codex')).toBe('gpt-5.2-codex')
     expect(resolveTaskTitleProvider(result)).toBe('claude-code')
@@ -145,5 +157,25 @@ describe('agent settings normalization', () => {
       'claude-custom-lab',
       'claude-opus-4-6',
     ])
+  })
+
+  it('clamps numeric appearance settings to safe ranges', () => {
+    const result = normalizeAgentSettings({
+      defaultTerminalWindowScalePercent: 999,
+      terminalFontSize: 1,
+      uiFontSize: 999,
+    })
+
+    expect(result.defaultTerminalWindowScalePercent).toBe(120)
+    expect(result.terminalFontSize).toBe(10)
+    expect(result.uiFontSize).toBe(24)
+  })
+
+  it('migrates legacy uiFontScalePercent to uiFontSize', () => {
+    const result = normalizeAgentSettings({
+      uiFontScalePercent: 125,
+    })
+
+    expect(result.uiFontSize).toBe(20)
   })
 })

@@ -8,6 +8,7 @@ export interface TerminalNodeProps {
   lastError: string | null
   width: number
   height: number
+  terminalFontSize: number
   scrollback: string | null
   onClose: () => void
   onResize: (size: { width: number; height: number }) => void
