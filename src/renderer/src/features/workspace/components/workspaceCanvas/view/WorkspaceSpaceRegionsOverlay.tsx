@@ -3,6 +3,7 @@ import { ViewportPortal } from '@xyflow/react'
 import type { SpaceVisual } from '../types'
 
 interface WorkspaceSpaceRegionsOverlayProps {
+  workspacePath: string
   spaceVisuals: SpaceVisual[]
   activeSpaceId: string | null
   spaceDragOffset: { spaceId: string; dx: number; dy: number } | null
@@ -17,9 +18,11 @@ interface WorkspaceSpaceRegionsOverlayProps {
   commitSpaceRename: (spaceId: string) => void
   cancelSpaceRename: () => void
   startSpaceRename: (spaceId: string) => void
+  onOpenSpaceMenu?: (spaceId: string) => void
 }
 
 export function WorkspaceSpaceRegionsOverlay({
+  workspacePath,
   spaceVisuals,
   activeSpaceId,
   spaceDragOffset,
@@ -31,106 +34,158 @@ export function WorkspaceSpaceRegionsOverlay({
   commitSpaceRename,
   cancelSpaceRename,
   startSpaceRename,
+  onOpenSpaceMenu,
 }: WorkspaceSpaceRegionsOverlayProps): React.JSX.Element {
+  const worktreeLabelByDirectory = React.useMemo(() => {
+    const unique = [...new Set(spaceVisuals.map(space => space.directoryPath.trim()))].filter(
+      path => path.length > 0 && path !== workspacePath,
+    )
+
+    unique.sort((left, right) => left.localeCompare(right))
+
+    const labels = new Map<string, string>()
+    unique.forEach((path, index) => {
+      labels.set(path, `WT${index + 1}`)
+    })
+
+    return labels
+  }, [spaceVisuals, workspacePath])
+
   return (
     <ViewportPortal>
-      {spaceVisuals.map(space => (
-        <div
-          key={space.id}
-          className={`workspace-space-region${space.id === activeSpaceId ? ' workspace-space-region--active' : ''}`}
-          style={{
-            transform: `translate(${
-              space.rect.x +
-              (spaceDragOffset?.spaceId === space.id && space.hasExplicitRect
-                ? spaceDragOffset.dx
-                : 0)
-            }px, ${
-              space.rect.y +
-              (spaceDragOffset?.spaceId === space.id && space.hasExplicitRect
-                ? spaceDragOffset.dy
-                : 0)
-            }px)`,
-            width: space.rect.width,
-            height: space.rect.height,
-          }}
-        >
-          <div
-            className="workspace-space-region__drag-handle workspace-space-region__drag-handle--top"
-            data-testid={`workspace-space-drag-${space.id}-top`}
-            onPointerDown={event => {
-              handleSpaceDragHandlePointerDown(event, space.id)
-            }}
-          />
-          <div
-            className="workspace-space-region__drag-handle workspace-space-region__drag-handle--right"
-            data-testid={`workspace-space-drag-${space.id}-right`}
-            onPointerDown={event => {
-              handleSpaceDragHandlePointerDown(event, space.id)
-            }}
-          />
-          <div
-            className="workspace-space-region__drag-handle workspace-space-region__drag-handle--bottom"
-            data-testid={`workspace-space-drag-${space.id}-bottom`}
-            onPointerDown={event => {
-              handleSpaceDragHandlePointerDown(event, space.id)
-            }}
-          />
-          <div
-            className="workspace-space-region__drag-handle workspace-space-region__drag-handle--left"
-            data-testid={`workspace-space-drag-${space.id}-left`}
-            onPointerDown={event => {
-              handleSpaceDragHandlePointerDown(event, space.id)
-            }}
-          />
-          {editingSpaceId === space.id ? (
-            <input
-              ref={spaceRenameInputRef}
-              className="workspace-space-region__label-input nodrag nowheel"
-              data-testid={`workspace-space-label-input-${space.id}`}
-              value={spaceRenameDraft}
-              onPointerDown={event => {
-                event.stopPropagation()
-              }}
-              onClick={event => {
-                event.stopPropagation()
-              }}
-              onChange={event => {
-                setSpaceRenameDraft(event.target.value)
-              }}
-              onBlur={() => {
-                commitSpaceRename(space.id)
-              }}
-              onKeyDown={event => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  commitSpaceRename(space.id)
-                  return
-                }
+      {spaceVisuals.map(space => {
+        const normalizedDirectoryPath = space.directoryPath.trim()
+        const hasWorktreeDirectory =
+          normalizedDirectoryPath.length > 0 && normalizedDirectoryPath !== workspacePath
 
-                if (event.key === 'Escape') {
-                  event.preventDefault()
-                  cancelSpaceRename()
-                }
+        return (
+          <div
+            key={space.id}
+            className={`workspace-space-region${space.id === activeSpaceId ? ' workspace-space-region--active' : ''}`}
+            style={{
+              transform: `translate(${
+                space.rect.x +
+                (spaceDragOffset?.spaceId === space.id && space.hasExplicitRect
+                  ? spaceDragOffset.dx
+                  : 0)
+              }px, ${
+                space.rect.y +
+                (spaceDragOffset?.spaceId === space.id && space.hasExplicitRect
+                  ? spaceDragOffset.dy
+                  : 0)
+              }px)`,
+              width: space.rect.width,
+              height: space.rect.height,
+            }}
+          >
+            <div
+              className="workspace-space-region__drag-handle workspace-space-region__drag-handle--top"
+              data-testid={`workspace-space-drag-${space.id}-top`}
+              onPointerDown={event => {
+                handleSpaceDragHandlePointerDown(event, space.id)
               }}
             />
-          ) : (
-            <button
-              type="button"
-              className="workspace-space-region__label"
-              data-testid={`workspace-space-label-${space.id}`}
+            <div
+              className="workspace-space-region__drag-handle workspace-space-region__drag-handle--right"
+              data-testid={`workspace-space-drag-${space.id}-right`}
               onPointerDown={event => {
-                event.stopPropagation()
+                handleSpaceDragHandlePointerDown(event, space.id)
               }}
-              onClick={event => {
-                event.stopPropagation()
-                startSpaceRename(space.id)
+            />
+            <div
+              className="workspace-space-region__drag-handle workspace-space-region__drag-handle--bottom"
+              data-testid={`workspace-space-drag-${space.id}-bottom`}
+              onPointerDown={event => {
+                handleSpaceDragHandlePointerDown(event, space.id)
               }}
-            >
-              {space.name}
-            </button>
-          )}
-        </div>
-      ))}
+            />
+            <div
+              className="workspace-space-region__drag-handle workspace-space-region__drag-handle--left"
+              data-testid={`workspace-space-drag-${space.id}-left`}
+              onPointerDown={event => {
+                handleSpaceDragHandlePointerDown(event, space.id)
+              }}
+            />
+            {editingSpaceId === space.id ? (
+              <input
+                ref={spaceRenameInputRef}
+                className="workspace-space-region__label-input nodrag nowheel"
+                data-testid={`workspace-space-label-input-${space.id}`}
+                value={spaceRenameDraft}
+                onPointerDown={event => {
+                  event.stopPropagation()
+                }}
+                onClick={event => {
+                  event.stopPropagation()
+                }}
+                onChange={event => {
+                  setSpaceRenameDraft(event.target.value)
+                }}
+                onBlur={() => {
+                  commitSpaceRename(space.id)
+                }}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    commitSpaceRename(space.id)
+                    return
+                  }
+
+                  if (event.key === 'Escape') {
+                    event.preventDefault()
+                    cancelSpaceRename()
+                  }
+                }}
+              />
+            ) : (
+              <div
+                className="workspace-space-region__label-group nodrag nowheel"
+                onPointerDown={event => {
+                  event.stopPropagation()
+                }}
+                onClick={event => {
+                  event.stopPropagation()
+                }}
+              >
+                <button
+                  type="button"
+                  className="workspace-space-region__label"
+                  data-testid={`workspace-space-label-${space.id}`}
+                  onClick={event => {
+                    event.stopPropagation()
+                    startSpaceRename(space.id)
+                  }}
+                >
+                  {space.name}
+                </button>
+
+                {hasWorktreeDirectory ? (
+                  <span
+                    className="workspace-space-region__worktree-badge"
+                    title={normalizedDirectoryPath}
+                  >
+                    {worktreeLabelByDirectory.get(normalizedDirectoryPath) ?? 'WT'}
+                  </span>
+                ) : null}
+
+                <button
+                  type="button"
+                  className="workspace-space-region__menu"
+                  data-testid={`workspace-space-menu-${space.id}`}
+                  aria-label={`Open ${space.name} worktree menu`}
+                  title="Worktree"
+                  onClick={event => {
+                    event.stopPropagation()
+                    onOpenSpaceMenu?.(space.id)
+                  }}
+                >
+                  ...
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </ViewportPortal>
   )
 }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState, type MutableRefObject } from 'react'
 import type { Node } from '@xyflow/react'
-import type { TerminalNodeData } from '../../../types'
+import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import { isAgentWorking, toErrorMessage } from '../helpers'
 import type { ContextMenuState, TaskAssignerState } from '../types'
 
 interface UseTaskAssignerParams {
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
+  spacesRef: MutableRefObject<WorkspaceSpaceState[]>
+  onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
   setNodes: (
     updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
     options?: { syncLayout?: boolean },
@@ -17,6 +19,8 @@ interface UseTaskAssignerParams {
 
 export function useWorkspaceCanvasTaskAssigner({
   nodesRef,
+  spacesRef,
+  onSpacesChange,
   setNodes,
   onRequestPersistFlush,
   setContextMenu,
@@ -64,6 +68,7 @@ export function useWorkspaceCanvasTaskAssigner({
     }
 
     const selectedAgentNodeId = taskAssigner.selectedAgentNodeId.trim()
+    const resolvedSelectedId = selectedAgentNodeId.length > 0 ? selectedAgentNodeId : null
 
     if (selectedAgentNodeId.length > 0) {
       const selectedAgentNode = nodesRef.current.find(node => node.id === selectedAgentNodeId)
@@ -191,6 +196,32 @@ export function useWorkspaceCanvasTaskAssigner({
       })
 
       onRequestPersistFlush?.()
+
+      if (resolvedSelectedId) {
+        const taskSpace = spacesRef.current.find(space =>
+          space.nodeIds.includes(taskAssigner.taskNodeId),
+        )
+        if (taskSpace) {
+          const nextSpaces = spacesRef.current.map(space => {
+            const filtered = space.nodeIds.filter(nodeId => nodeId !== resolvedSelectedId)
+
+            if (space.id !== taskSpace.id) {
+              return {
+                ...space,
+                nodeIds: filtered,
+              }
+            }
+
+            return {
+              ...space,
+              nodeIds: [...new Set([...filtered, resolvedSelectedId])],
+            }
+          })
+
+          onSpacesChange(nextSpaces)
+        }
+      }
+
       setTaskAssigner(null)
     } catch (error) {
       setTaskAssigner(prev =>
@@ -203,7 +234,7 @@ export function useWorkspaceCanvasTaskAssigner({
           : prev,
       )
     }
-  }, [onRequestPersistFlush, setNodes, taskAssigner, nodesRef])
+  }, [onRequestPersistFlush, onSpacesChange, setNodes, spacesRef, taskAssigner, nodesRef])
 
   useEffect(() => {
     openTaskAssignerRef.current = nodeId => {

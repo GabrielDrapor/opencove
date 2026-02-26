@@ -1,22 +1,29 @@
 import { useCallback, useEffect, type MutableRefObject } from 'react'
 import type { Node } from '@xyflow/react'
 import {
-  resolveAgentModel,
   resolveTaskTitleModel,
   resolveTaskTitleProvider,
   type AgentSettings,
 } from '../../../../settings/agentConfig'
-import type { TaskPriority, TaskRuntimeStatus, TerminalNodeData } from '../../../types'
-import { normalizeTaskPriority, normalizeTaskTagSelection, toErrorMessage } from '../helpers'
+import type {
+  TaskPriority,
+  TaskRuntimeStatus,
+  TerminalNodeData,
+  WorkspaceSpaceState,
+} from '../../../types'
+import { normalizeTaskPriority, normalizeTaskTagSelection } from '../helpers'
 import type {
   CreateNodeInput,
   QuickUpdateTaskRequirement,
   QuickUpdateTaskTitle,
   UpdateTaskStatus,
 } from '../types'
+import { resumeTaskAgentSessionAction, runTaskAgentAction } from './useTaskActions.agentSession'
 
 interface UseTaskActionsParams {
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
+  spacesRef: MutableRefObject<WorkspaceSpaceState[]>
+  onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
   setNodes: (
     updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
     options?: { syncLayout?: boolean },
@@ -32,6 +39,10 @@ interface UseTaskActionsParams {
   taskTagOptions: string[]
   onRequestPersistFlush?: () => void
   runTaskAgentRef: MutableRefObject<(nodeId: string) => Promise<void>>
+  resumeTaskAgentSessionRef: MutableRefObject<
+    (taskNodeId: string, recordId: string) => Promise<void>
+  >
+  removeTaskAgentSessionRecordRef: MutableRefObject<(taskNodeId: string, recordId: string) => void>
   updateTaskStatusRef: MutableRefObject<UpdateTaskStatus>
   quickUpdateTaskTitleRef: MutableRefObject<QuickUpdateTaskTitle>
   quickUpdateTaskRequirementRef: MutableRefObject<QuickUpdateTaskRequirement>
@@ -39,6 +50,8 @@ interface UseTaskActionsParams {
 
 export function useWorkspaceCanvasTaskActions({
   nodesRef,
+  spacesRef,
+  onSpacesChange,
   setNodes,
   createNodeForSession,
   buildAgentNodeTitle,
@@ -48,6 +61,8 @@ export function useWorkspaceCanvasTaskActions({
   taskTagOptions,
   onRequestPersistFlush,
   runTaskAgentRef,
+  resumeTaskAgentSessionRef,
+  removeTaskAgentSessionRecordRef,
   updateTaskStatusRef,
   quickUpdateTaskTitleRef,
   quickUpdateTaskRequirementRef,
@@ -58,190 +73,18 @@ export function useWorkspaceCanvasTaskActions({
 } {
   const runTaskAgent = useCallback(
     async (taskNodeId: string) => {
-      const taskNode = nodesRef.current.find(node => node.id === taskNodeId)
-      if (!taskNode || taskNode.data.kind !== 'task' || !taskNode.data.task) {
-        return
-      }
-
-      const requirement = taskNode.data.task.requirement.trim()
-      if (requirement.length === 0) {
-        setNodes(prevNodes =>
-          prevNodes.map(node => {
-            if (node.id !== taskNodeId) {
-              return node
-            }
-
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                lastError: '任务要求不能为空。',
-              },
-            }
-          }),
-        )
-        return
-      }
-
-      const linkedAgentNodeId = taskNode.data.task.linkedAgentNodeId
-      if (linkedAgentNodeId) {
-        const linkedAgentNode = nodesRef.current.find(node => node.id === linkedAgentNodeId)
-
-        if (
-          linkedAgentNode &&
-          linkedAgentNode.data.kind === 'agent' &&
-          linkedAgentNode.data.agent
-        ) {
-          const now = new Date().toISOString()
-
-          setNodes(prevNodes =>
-            prevNodes.map(node => {
-              if (node.id === linkedAgentNodeId && node.data.kind === 'agent' && node.data.agent) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    agent: {
-                      ...node.data.agent,
-                      prompt: requirement,
-                      taskId: taskNodeId,
-                    },
-                    lastError: null,
-                  },
-                }
-              }
-
-              if (node.id === taskNodeId && node.data.kind === 'task' && node.data.task) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    lastError: null,
-                    task: {
-                      ...node.data.task,
-                      status: 'doing',
-                      linkedAgentNodeId,
-                      lastRunAt: now,
-                      updatedAt: now,
-                    },
-                  },
-                }
-              }
-
-              return node
-            }),
-          )
-          onRequestPersistFlush?.()
-
-          await launchAgentInNode(linkedAgentNodeId, 'new')
-          return
-        }
-
-        setNodes(prevNodes =>
-          prevNodes.map(node => {
-            if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
-              return node
-            }
-
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                task: {
-                  ...node.data.task,
-                  linkedAgentNodeId: null,
-                  updatedAt: new Date().toISOString(),
-                },
-              },
-            }
-          }),
-        )
-        onRequestPersistFlush?.()
-      }
-
-      const provider = agentSettings.defaultProvider
-      const model = resolveAgentModel(agentSettings, provider)
-
-      try {
-        const launched = await window.coveApi.agent.launch({
-          provider,
-          cwd: workspacePath,
-          prompt: requirement,
-          mode: 'new',
-          model,
-          cols: 80,
-          rows: 24,
-        })
-
-        const createdAgentNode = await createNodeForSession({
-          sessionId: launched.sessionId,
-          title: buildAgentNodeTitle(provider, launched.effectiveModel),
-          anchor: {
-            x: taskNode.position.x + taskNode.data.width + 48,
-            y: taskNode.position.y,
-          },
-          kind: 'agent',
-          agent: {
-            provider,
-            prompt: requirement,
-            model,
-            effectiveModel: launched.effectiveModel,
-            launchMode: launched.launchMode,
-            resumeSessionId: launched.resumeSessionId,
-            executionDirectory: workspacePath,
-            directoryMode: 'workspace',
-            customDirectory: null,
-            shouldCreateDirectory: false,
-            taskId: taskNodeId,
-          },
-        })
-
-        if (!createdAgentNode) {
-          return
-        }
-
-        const now = new Date().toISOString()
-
-        setNodes(prevNodes =>
-          prevNodes.map(node => {
-            if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
-              return node
-            }
-
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                task: {
-                  ...node.data.task,
-                  status: 'doing',
-                  linkedAgentNodeId: createdAgentNode.id,
-                  lastRunAt: now,
-                  updatedAt: now,
-                },
-              },
-            }
-          }),
-        )
-        onRequestPersistFlush?.()
-      } catch (error) {
-        setNodes(prevNodes =>
-          prevNodes.map(node => {
-            if (node.id !== taskNodeId || node.data.kind !== 'task') {
-              return node
-            }
-
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                lastError: `Agent 启动失败：${toErrorMessage(error)}`,
-              },
-            }
-          }),
-        )
-        onRequestPersistFlush?.()
-      }
+      await runTaskAgentAction(taskNodeId, {
+        nodesRef,
+        spacesRef,
+        onSpacesChange,
+        setNodes,
+        createNodeForSession,
+        buildAgentNodeTitle,
+        launchAgentInNode,
+        agentSettings,
+        workspacePath,
+        onRequestPersistFlush,
+      })
     },
     [
       agentSettings,
@@ -249,8 +92,66 @@ export function useWorkspaceCanvasTaskActions({
       createNodeForSession,
       launchAgentInNode,
       nodesRef,
+      onSpacesChange,
       onRequestPersistFlush,
       setNodes,
+      spacesRef,
+      workspacePath,
+    ],
+  )
+
+  const removeTaskAgentSessionRecord = useCallback(
+    (taskNodeId: string, recordId: string) => {
+      setNodes(prevNodes =>
+        prevNodes.map(node => {
+          if (node.id !== taskNodeId || node.data.kind !== 'task' || !node.data.task) {
+            return node
+          }
+
+          const nextSessions = (node.data.task.agentSessions ?? []).filter(
+            record => record.id !== recordId,
+          )
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              task: {
+                ...node.data.task,
+                agentSessions: nextSessions,
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          }
+        }),
+      )
+
+      onRequestPersistFlush?.()
+    },
+    [onRequestPersistFlush, setNodes],
+  )
+
+  const resumeTaskAgentSession = useCallback(
+    async (taskNodeId: string, recordId: string) => {
+      await resumeTaskAgentSessionAction(taskNodeId, recordId, {
+        nodesRef,
+        spacesRef,
+        onSpacesChange,
+        setNodes,
+        createNodeForSession,
+        buildAgentNodeTitle,
+        workspacePath,
+        onRequestPersistFlush,
+      })
+    },
+    [
+      buildAgentNodeTitle,
+      createNodeForSession,
+      nodesRef,
+      onRequestPersistFlush,
+      onSpacesChange,
+      setNodes,
+      spacesRef,
       workspacePath,
     ],
   )
@@ -380,6 +281,18 @@ export function useWorkspaceCanvasTaskActions({
       await runTaskAgent(nodeId)
     }
   }, [runTaskAgent, runTaskAgentRef])
+
+  useEffect(() => {
+    resumeTaskAgentSessionRef.current = async (taskNodeId, recordId) => {
+      await resumeTaskAgentSession(taskNodeId, recordId)
+    }
+  }, [resumeTaskAgentSession, resumeTaskAgentSessionRef])
+
+  useEffect(() => {
+    removeTaskAgentSessionRecordRef.current = (taskNodeId, recordId) => {
+      removeTaskAgentSessionRecord(taskNodeId, recordId)
+    }
+  }, [removeTaskAgentSessionRecord, removeTaskAgentSessionRecordRef])
 
   useEffect(() => {
     updateTaskStatusRef.current = (nodeId, status) => {

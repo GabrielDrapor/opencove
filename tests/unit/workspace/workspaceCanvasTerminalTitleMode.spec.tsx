@@ -189,6 +189,7 @@ describe('WorkspaceCanvas terminal title mode', () => {
         <WorkspaceCanvas
           workspaceId="workspace-1"
           workspacePath="/tmp"
+          worktreesRoot=""
           nodes={nodes}
           onNodesChange={next => {
             latestNodes = next

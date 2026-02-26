@@ -1,16 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { JSX, PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import type { JSX } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { resolveStablePtySize } from '../utils/terminalResize'
-import {
-  MIN_HEIGHT,
-  MIN_WIDTH,
-  TERMINAL_LAYOUT_SYNC_EVENT,
-  type ResizeAxis,
-} from './terminalNode/constants'
+import { TERMINAL_LAYOUT_SYNC_EVENT } from './terminalNode/constants'
 import {
   createTerminalCommandInputState,
   parseTerminalCommandInput,
@@ -19,6 +14,7 @@ import { createPtyWriteQueue, registerXtermPasteGuards } from './terminalNode/in
 import { mergeScrollbackSnapshots } from './terminalNode/scrollback'
 import { TerminalNodeHeader } from './terminalNode/TerminalNodeHeader'
 import { resolveSuffixPrefixOverlap } from './terminalNode/overlap'
+import { useTerminalResize } from './terminalNode/useTerminalResize'
 import { useTerminalScrollback } from './terminalNode/useScrollback'
 import { shouldStopWheelPropagation } from './terminalNode/wheel'
 import type { TerminalNodeProps } from './TerminalNode.types'
@@ -28,6 +24,7 @@ export function TerminalNode({
   title,
   kind,
   status,
+  directoryMismatch,
   lastError,
   width,
   height,
@@ -39,20 +36,10 @@ export function TerminalNode({
   onTitleCommit,
   onCommandRun,
   onInteractionStart,
-  onStop,
-  onRerun,
-  onResume,
 }: TerminalNodeProps): JSX.Element {
   const terminalRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const resizeStartRef = useRef<{
-    x: number
-    y: number
-    width: number
-    height: number
-    axis: ResizeAxis
-  } | null>(null)
   const isPointerResizingRef = useRef(false)
   const lastSyncedPtySizeRef = useRef<{ cols: number; rows: number } | null>(null)
   const commandInputStateRef = useRef(createTerminalCommandInputState())
@@ -74,34 +61,10 @@ export function TerminalNode({
     isPointerResizingRef,
   })
 
-  const draftSizeRef = useRef<{ width: number; height: number } | null>(null)
-  const [isResizing, setIsResizing] = useState(false)
-  const [draftSize, setDraftSize] = useState<{ width: number; height: number } | null>(null)
-
-  useEffect(() => {
-    draftSizeRef.current = draftSize
-  }, [draftSize])
-
-  useEffect(() => {
-    if (!draftSize || isResizing) {
-      return
-    }
-
-    if (draftSize.width === width && draftSize.height === height) {
-      setDraftSize(null)
-    }
-  }, [draftSize, height, isResizing, width])
-
   useEffect(() => {
     lastSyncedPtySizeRef.current = null
     commandInputStateRef.current = createTerminalCommandInputState()
   }, [sessionId])
-
-  const renderedSize = draftSize ?? { width, height }
-  const sizeStyle = useMemo(
-    () => ({ width: renderedSize.width, height: renderedSize.height }),
-    [renderedSize.height, renderedSize.width],
-  )
 
   const syncTerminalSize = useCallback(() => {
     const terminal = terminalRef.current
@@ -146,6 +109,21 @@ export function TerminalNode({
       rows: nextPtySize.rows,
     })
   }, [sessionId])
+
+  const { draftSize, handleResizePointerDown } = useTerminalResize({
+    width,
+    height,
+    onResize,
+    syncTerminalSize,
+    scheduleScrollbackPublish,
+    isPointerResizingRef,
+  })
+
+  const renderedSize = draftSize ?? { width, height }
+  const sizeStyle = useMemo(
+    () => ({ width: renderedSize.width, height: renderedSize.height }),
+    [renderedSize.height, renderedSize.width],
+  )
 
   useEffect(() => {
     const ptyWithOptionalAttach = window.coveApi.pty as typeof window.coveApi.pty & {
@@ -396,71 +374,6 @@ export function TerminalNode({
     }
   }, [height, syncTerminalSize, width])
 
-  const handleResizePointerDown = useCallback(
-    (axis: ResizeAxis) => (event: ReactPointerEvent<HTMLButtonElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      event.currentTarget.setPointerCapture(event.pointerId)
-
-      resizeStartRef.current = {
-        x: event.clientX,
-        y: event.clientY,
-        width,
-        height,
-        axis,
-      }
-
-      isPointerResizingRef.current = true
-      setDraftSize({ width, height })
-      setIsResizing(true)
-    },
-    [height, width],
-  )
-
-  useEffect(() => {
-    if (!isResizing) {
-      return
-    }
-
-    const handlePointerMove = (event: PointerEvent) => {
-      const start = resizeStartRef.current
-      if (!start) {
-        return
-      }
-
-      if (start.axis === 'horizontal') {
-        const nextWidth = Math.max(MIN_WIDTH, Math.round(start.width + (event.clientX - start.x)))
-        setDraftSize({ width: nextWidth, height: start.height })
-        return
-      }
-
-      const nextHeight = Math.max(MIN_HEIGHT, Math.round(start.height + (event.clientY - start.y)))
-      setDraftSize({ width: start.width, height: nextHeight })
-    }
-
-    const handlePointerUp = () => {
-      setIsResizing(false)
-      isPointerResizingRef.current = false
-
-      const finalSize = draftSizeRef.current ?? { width, height }
-      onResize(finalSize)
-
-      resizeStartRef.current = null
-      requestAnimationFrame(() => {
-        syncTerminalSize()
-        scheduleScrollbackPublish(true)
-      })
-    }
-
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp, { once: true })
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-    }
-  }, [height, isResizing, onResize, scheduleScrollbackPublish, syncTerminalSize, width])
-
   const isAgentNode = kind === 'agent'
 
   return (
@@ -480,11 +393,9 @@ export function TerminalNode({
         title={title}
         kind={kind}
         status={status}
+        directoryMismatch={directoryMismatch}
         onTitleCommit={onTitleCommit}
         onClose={onClose}
-        onStop={onStop}
-        onRerun={onRerun}
-        onResume={onResume}
       />
 
       {isAgentNode && lastError ? <div className="terminal-node__error">{lastError}</div> : null}

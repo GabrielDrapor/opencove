@@ -80,6 +80,7 @@ describe('WorkspaceCanvas keyboard focus behavior', () => {
       <WorkspaceCanvas
         workspaceId="workspace-1"
         workspacePath="/tmp"
+        worktreesRoot=""
         nodes={nodes}
         onNodesChange={() => undefined}
         spaces={spaces}

@@ -126,3 +126,65 @@ export interface SuggestTaskTitleResult {
   provider: AgentProviderId
   effectiveModel: string | null
 }
+
+export interface GitWorktreeInfo {
+  path: string
+  head: string | null
+  branch: string | null
+}
+
+export interface ListGitBranchesInput {
+  repoPath: string
+}
+
+export interface ListGitBranchesResult {
+  current: string | null
+  branches: string[]
+}
+
+export interface ListGitWorktreesInput {
+  repoPath: string
+}
+
+export interface ListGitWorktreesResult {
+  worktrees: GitWorktreeInfo[]
+}
+
+export type CreateGitWorktreeBranchMode =
+  | { kind: 'new'; name: string; startPoint: string }
+  | { kind: 'existing'; name: string }
+
+export interface CreateGitWorktreeInput {
+  repoPath: string
+  worktreePath: string
+  branchMode: CreateGitWorktreeBranchMode
+}
+
+export interface CreateGitWorktreeResult {
+  worktree: GitWorktreeInfo
+}
+
+export interface RemoveGitWorktreeInput {
+  repoPath: string
+  worktreePath: string
+  force?: boolean
+}
+
+export interface SuggestWorktreeNamesInput {
+  provider: AgentProviderId
+  cwd: string
+  spaceName: string
+  spaceNotes?: string | null
+  tasks: Array<{
+    title: string
+    requirement: string
+  }>
+  model?: string | null
+}
+
+export interface SuggestWorktreeNamesResult {
+  branchName: string
+  worktreeName: string
+  provider: AgentProviderId
+  effectiveModel: string | null
+}

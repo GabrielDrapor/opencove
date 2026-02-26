@@ -2,7 +2,7 @@ import { useMemo, type MutableRefObject, type ReactElement } from 'react'
 import type { Node } from '@xyflow/react'
 import { TaskNode } from '../TaskNode'
 import { TerminalNode } from '../TerminalNode'
-import type { Size, TerminalNodeData } from '../../types'
+import type { Size, TerminalNodeData, WorkspaceSpaceState } from '../../types'
 import type {
   QuickUpdateTaskRequirement,
   QuickUpdateTaskTitle,
@@ -12,20 +12,23 @@ import type {
 
 interface WorkspaceCanvasNodeTypesParams {
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
+  spacesRef: MutableRefObject<WorkspaceSpaceState[]>
+  workspacePath: string
   terminalFontSize: number
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNodeScrollbackRef: MutableRefObject<UpdateNodeScrollback>
   normalizeViewportForTerminalInteractionRef: MutableRefObject<(nodeId: string) => void>
-  stopAgentNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
-  rerunAgentNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
-  resumeAgentNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   requestTaskDeleteRef: MutableRefObject<(nodeId: string) => void>
   openTaskEditorRef: MutableRefObject<(nodeId: string) => void>
   quickUpdateTaskTitleRef: MutableRefObject<QuickUpdateTaskTitle>
   quickUpdateTaskRequirementRef: MutableRefObject<QuickUpdateTaskRequirement>
   openTaskAssignerRef: MutableRefObject<(nodeId: string) => void>
   runTaskAgentRef: MutableRefObject<(nodeId: string) => Promise<void>>
+  resumeTaskAgentSessionRef: MutableRefObject<
+    (taskNodeId: string, recordId: string) => Promise<void>
+  >
+  removeTaskAgentSessionRecordRef: MutableRefObject<(taskNodeId: string, recordId: string) => void>
   updateTaskStatusRef: MutableRefObject<UpdateTaskStatus>
   updateTerminalTitleRef: MutableRefObject<(nodeId: string, title: string) => void>
   renameTerminalTitleRef: MutableRefObject<(nodeId: string, title: string) => void>
@@ -33,20 +36,21 @@ interface WorkspaceCanvasNodeTypesParams {
 
 export function useWorkspaceCanvasNodeTypes({
   nodesRef,
+  spacesRef,
+  workspacePath,
   terminalFontSize,
   closeNodeRef,
   resizeNodeRef,
   updateNodeScrollbackRef,
   normalizeViewportForTerminalInteractionRef,
-  stopAgentNodeRef,
-  rerunAgentNodeRef,
-  resumeAgentNodeRef,
   requestTaskDeleteRef,
   openTaskEditorRef,
   quickUpdateTaskTitleRef,
   quickUpdateTaskRequirementRef,
   openTaskAssignerRef,
   runTaskAgentRef,
+  resumeTaskAgentSessionRef,
+  removeTaskAgentSessionRecordRef,
   updateTaskStatusRef,
   updateTerminalTitleRef,
   renameTerminalTitleRef,
@@ -62,6 +66,24 @@ export function useWorkspaceCanvasNodeTypes({
           title={data.title}
           kind={data.kind}
           status={data.status}
+          directoryMismatch={
+            data.kind === 'agent' &&
+            data.agent?.expectedDirectory &&
+            data.agent.expectedDirectory !== data.agent.executionDirectory
+              ? {
+                  executionDirectory: data.agent.executionDirectory,
+                  expectedDirectory: data.agent.expectedDirectory,
+                }
+              : data.kind === 'terminal' &&
+                  data.executionDirectory &&
+                  data.expectedDirectory &&
+                  data.expectedDirectory !== data.executionDirectory
+                ? {
+                    executionDirectory: data.executionDirectory,
+                    expectedDirectory: data.expectedDirectory,
+                  }
+                : null
+          }
           lastError={data.lastError}
           width={data.width}
           height={data.height}
@@ -87,27 +109,6 @@ export function useWorkspaceCanvasNodeTypes({
               : undefined
           }
           onInteractionStart={() => normalizeViewportForTerminalInteractionRef.current(id)}
-          onStop={
-            data.kind === 'agent'
-              ? () => {
-                  void stopAgentNodeRef.current(id)
-                }
-              : undefined
-          }
-          onRerun={
-            data.kind === 'agent'
-              ? () => {
-                  void rerunAgentNodeRef.current(id)
-                }
-              : undefined
-          }
-          onResume={
-            data.kind === 'agent'
-              ? () => {
-                  void resumeAgentNodeRef.current(id)
-                }
-              : undefined
-          }
         />
       ),
       taskNode: ({ data, id }: { data: TerminalNodeData; id: string }) => {
@@ -115,11 +116,32 @@ export function useWorkspaceCanvasNodeTypes({
           return null
         }
 
+        const taskSpace = spacesRef.current.find(space => space.nodeIds.includes(id)) ?? null
+        const currentDirectory =
+          taskSpace && taskSpace.directoryPath.trim().length > 0
+            ? taskSpace.directoryPath
+            : workspacePath
+
         const linkedAgentTitle = data.task.linkedAgentNodeId
           ? (nodesRef.current.find(
               node => node.id === data.task?.linkedAgentNodeId && node.data.kind === 'agent',
             )?.data.title ?? null)
           : null
+        const linkedAgentNode = data.task.linkedAgentNodeId
+          ? (nodesRef.current.find(
+              node => node.id === data.task?.linkedAgentNodeId && node.data.kind === 'agent',
+            ) ?? null)
+          : null
+        const linkedAgentSummary =
+          linkedAgentNode && linkedAgentNode.data.kind === 'agent' && linkedAgentNode.data.agent
+            ? {
+                nodeId: linkedAgentNode.id,
+                title: linkedAgentNode.data.title,
+                provider: linkedAgentNode.data.agent.provider,
+                status: linkedAgentNode.data.status,
+                startedAt: linkedAgentNode.data.startedAt,
+              }
+            : null
 
         return (
           <TaskNode
@@ -131,6 +153,9 @@ export function useWorkspaceCanvasNodeTypes({
             createdAt={data.task.createdAt}
             updatedAt={data.task.updatedAt}
             linkedAgentTitle={linkedAgentTitle}
+            linkedAgentNode={linkedAgentSummary}
+            agentSessions={data.task.agentSessions ?? []}
+            currentDirectory={currentDirectory}
             width={data.width}
             height={data.height}
             onClose={() => {
@@ -155,6 +180,12 @@ export function useWorkspaceCanvasNodeTypes({
             onStatusChange={status => {
               updateTaskStatusRef.current(id, status)
             }}
+            onResumeAgentSession={recordId => {
+              void resumeTaskAgentSessionRef.current(id, recordId)
+            }}
+            onRemoveAgentSessionRecord={recordId => {
+              removeTaskAgentSessionRecordRef.current(id, recordId)
+            }}
           />
         )
       },
@@ -163,17 +194,18 @@ export function useWorkspaceCanvasNodeTypes({
       closeNodeRef,
       normalizeViewportForTerminalInteractionRef,
       nodesRef,
+      spacesRef,
+      workspacePath,
       terminalFontSize,
       openTaskAssignerRef,
       openTaskEditorRef,
       quickUpdateTaskRequirementRef,
       quickUpdateTaskTitleRef,
       requestTaskDeleteRef,
-      rerunAgentNodeRef,
       resizeNodeRef,
-      resumeAgentNodeRef,
       runTaskAgentRef,
-      stopAgentNodeRef,
+      resumeTaskAgentSessionRef,
+      removeTaskAgentSessionRecordRef,
       updateNodeScrollbackRef,
       updateTaskStatusRef,
       updateTerminalTitleRef,

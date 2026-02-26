@@ -2,19 +2,28 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants/ipc'
 import type {
   AttachTerminalInput,
+  CreateGitWorktreeInput,
+  CreateGitWorktreeResult,
   DetachTerminalInput,
   EnsureDirectoryInput,
   KillTerminalInput,
   LaunchAgentInput,
   LaunchAgentResult,
+  ListGitBranchesInput,
+  ListGitBranchesResult,
+  ListGitWorktreesInput,
+  ListGitWorktreesResult,
   ListAgentModelsInput,
   ListAgentModelsResult,
   ResizeTerminalInput,
+  RemoveGitWorktreeInput,
   SnapshotTerminalInput,
   SnapshotTerminalResult,
   SpawnTerminalInput,
   SuggestTaskTitleInput,
   SuggestTaskTitleResult,
+  SuggestWorktreeNamesInput,
+  SuggestWorktreeNamesResult,
   TerminalDataEvent,
   TerminalDoneEvent,
   TerminalExitEvent,
@@ -34,6 +43,18 @@ const coveApi = {
       ipcRenderer.invoke(IPC_CHANNELS.workspaceSelectDirectory),
     ensureDirectory: (payload: EnsureDirectoryInput): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.workspaceEnsureDirectory, payload),
+  },
+  worktree: {
+    listBranches: (payload: ListGitBranchesInput): Promise<ListGitBranchesResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreeListBranches, payload),
+    listWorktrees: (payload: ListGitWorktreesInput): Promise<ListGitWorktreesResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreeListWorktrees, payload),
+    create: (payload: CreateGitWorktreeInput): Promise<CreateGitWorktreeResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreeCreate, payload),
+    remove: (payload: RemoveGitWorktreeInput): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreeRemove, payload),
+    suggestNames: (payload: SuggestWorktreeNamesInput): Promise<SuggestWorktreeNamesResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreeSuggestNames, payload),
   },
   pty: {
     spawn: (payload: SpawnTerminalInput): Promise<{ sessionId: string }> =>

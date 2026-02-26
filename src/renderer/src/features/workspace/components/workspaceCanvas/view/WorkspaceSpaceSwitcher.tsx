@@ -53,7 +53,7 @@ export function WorkspaceSpaceSwitcher({
             cancelSpaceRename()
           }}
         >
-          {space.name}
+          <span className="workspace-space-switcher__item-label">{space.name}</span>
         </button>
       ))}
     </div>

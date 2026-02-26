@@ -22,6 +22,7 @@ describe('workspace persistence (read/normalize)', () => {
         id: 'workspace-1',
         name: 'cove',
         path: '/tmp/cove',
+        worktreesRoot: '.cove/worktrees',
         viewport: { x: -320, y: 180, zoom: 1.25 },
         isMinimapVisible: false,
         spaces: [],
@@ -139,6 +140,7 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restored?.workspaces).toHaveLength(1)
     expect(restored?.workspaces[0].viewport).toEqual({ x: -320, y: 180, zoom: 1.25 })
     expect(restored?.workspaces[0].isMinimapVisible).toBe(false)
+    expect(restored?.workspaces[0].worktreesRoot).toBe('.cove/worktrees')
     expect(restored?.workspaces[0].nodes).toHaveLength(3)
     expect(restored?.workspaces[0].nodes[0].title).toBe('terminal-1')
     expect(restored?.workspaces[0].nodes[0].scrollback).toContain('terminal output line 2')

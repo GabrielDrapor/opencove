@@ -1,6 +1,11 @@
 export const IPC_CHANNELS = {
   workspaceSelectDirectory: 'workspace:select-directory',
   workspaceEnsureDirectory: 'workspace:ensure-directory',
+  worktreeListBranches: 'worktree:list-branches',
+  worktreeListWorktrees: 'worktree:list-worktrees',
+  worktreeCreate: 'worktree:create',
+  worktreeRemove: 'worktree:remove',
+  worktreeSuggestNames: 'worktree:suggest-names',
   ptySpawn: 'pty:spawn',
   ptyWrite: 'pty:write',
   ptyResize: 'pty:resize',

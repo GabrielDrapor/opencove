@@ -6,6 +6,7 @@ import { registerTaskIpcHandlers } from '../modules/task/ipc/register'
 import { registerWorkspaceIpcHandlers } from '../modules/workspace/ipc/register'
 import { createApprovedWorkspaceStore } from '../modules/workspace/ApprovedWorkspaceStore'
 import { resolve } from 'node:path'
+import { registerWorktreeIpcHandlers } from '../modules/worktree/ipc/register'
 
 export type { IpcRegistrationDisposable } from './types'
 
@@ -19,6 +20,7 @@ export function registerIpcHandlers(): IpcRegistrationDisposable {
 
   const disposables: IpcRegistrationDisposable[] = [
     registerWorkspaceIpcHandlers(approvedWorkspaces),
+    registerWorktreeIpcHandlers(approvedWorkspaces),
     registerPtyIpcHandlers(ptyRuntime, approvedWorkspaces),
     registerAgentIpcHandlers(ptyRuntime, approvedWorkspaces),
     registerTaskIpcHandlers(approvedWorkspaces),

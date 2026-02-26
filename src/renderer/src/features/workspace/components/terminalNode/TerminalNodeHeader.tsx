@@ -6,32 +6,24 @@ interface TerminalNodeHeaderProps {
   title: string
   kind: WorkspaceNodeKind
   status: AgentRuntimeStatus | null
+  directoryMismatch?: { executionDirectory: string; expectedDirectory: string } | null
   onTitleCommit?: (title: string) => void
   onClose: () => void
-  onStop?: () => void
-  onRerun?: () => void
-  onResume?: () => void
 }
 
 export function TerminalNodeHeader({
   title,
   kind,
   status,
+  directoryMismatch,
   onTitleCommit,
   onClose,
-  onStop,
-  onRerun,
-  onResume,
 }: TerminalNodeHeaderProps): JSX.Element {
   const [isTitleEditing, setIsTitleEditing] = useState(false)
   const [titleDraft, setTitleDraft] = useState(title)
 
   const isTitleEditable = kind === 'terminal' && typeof onTitleCommit === 'function'
   const isAgentNode = kind === 'agent'
-  const canStop =
-    isAgentNode &&
-    (status === 'running' || status === 'restoring' || status === null) &&
-    typeof onStop === 'function'
 
   useEffect(() => {
     if (isTitleEditing) {
@@ -114,44 +106,21 @@ export function TerminalNodeHeader({
         <span className="terminal-node__title">{title}</span>
       )}
 
-      {isAgentNode ? (
-        <div className="terminal-node__agent-controls nodrag">
-          <span className={`terminal-node__status ${getStatusClassName(status)}`}>
-            {getStatusLabel(status)}
-          </span>
-          <button
-            type="button"
-            className="terminal-node__action"
-            disabled={!canStop}
-            onClick={event => {
-              event.stopPropagation()
-              onStop?.()
-            }}
-          >
-            Stop
-          </button>
-          <button
-            type="button"
-            className="terminal-node__action"
-            disabled={typeof onRerun !== 'function'}
-            onClick={event => {
-              event.stopPropagation()
-              onRerun?.()
-            }}
-          >
-            Rerun
-          </button>
-          <button
-            type="button"
-            className="terminal-node__action"
-            disabled={typeof onResume !== 'function'}
-            onClick={event => {
-              event.stopPropagation()
-              onResume?.()
-            }}
-          >
-            Resume
-          </button>
+      {directoryMismatch || isAgentNode ? (
+        <div className="terminal-node__header-badges nodrag">
+          {directoryMismatch ? (
+            <span
+              className="terminal-node__badge terminal-node__badge--warning"
+              title={`Bound directory: ${directoryMismatch.executionDirectory}\nCurrent directory: ${directoryMismatch.expectedDirectory}`}
+            >
+              DIR MISMATCH
+            </span>
+          ) : null}
+          {isAgentNode ? (
+            <span className={`terminal-node__status ${getStatusClassName(status)}`}>
+              {getStatusLabel(status)}
+            </span>
+          ) : null}
         </div>
       ) : null}
 

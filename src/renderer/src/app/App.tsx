@@ -15,6 +15,7 @@ import { ProjectContextMenu } from './components/ProjectContextMenu'
 import { Sidebar } from './components/Sidebar'
 import { useHydrateAppState } from './hooks/useHydrateAppState'
 import { usePersistedAppState } from './hooks/usePersistedAppState'
+import { useProjectContextMenuDismiss } from './hooks/useProjectContextMenuDismiss'
 import { useProviderModelCatalog } from './hooks/useProviderModelCatalog'
 import type { FocusRequest, ProjectContextMenuState, ProjectDeleteConfirmationState } from './types'
 import { createDefaultWorkspaceViewport, sanitizeWorkspaceSpaces } from './utils/workspaceSpaces'
@@ -96,6 +97,7 @@ export default function App(): React.JSX.Element {
     const nextWorkspace: WorkspaceState = {
       ...selected,
       nodes: [],
+      worktreesRoot: '',
       viewport: createDefaultWorkspaceViewport(),
       isMinimapVisible: DEFAULT_WORKSPACE_MINIMAP_VISIBLE,
       spaces: [],
@@ -259,6 +261,34 @@ export default function App(): React.JSX.Element {
     [activeWorkspace],
   )
 
+  const handleWorkspaceWorktreesRootChange = useCallback(
+    (worktreesRoot: string): void => {
+      if (!activeWorkspace) {
+        return
+      }
+
+      setWorkspaces(previous =>
+        previous.map(workspace => {
+          if (workspace.id !== activeWorkspace.id) {
+            return workspace
+          }
+
+          if (workspace.worktreesRoot === worktreesRoot) {
+            return workspace
+          }
+
+          return {
+            ...workspace,
+            worktreesRoot,
+          }
+        }),
+      )
+
+      requestPersistFlush()
+    },
+    [activeWorkspace, requestPersistFlush],
+  )
+
   const handleRemoveWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
     setIsRemovingProject(true)
 
@@ -289,36 +319,10 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
-  useEffect(() => {
-    if (!projectContextMenu) {
-      return
-    }
-
-    const closeMenu = (event: MouseEvent): void => {
-      if (
-        event.target instanceof Element &&
-        event.target.closest('.workspace-project-context-menu')
-      ) {
-        return
-      }
-
-      setProjectContextMenu(null)
-    }
-
-    const handleEscape = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        setProjectContextMenu(null)
-      }
-    }
-
-    window.addEventListener('mousedown', closeMenu)
-    window.addEventListener('keydown', handleEscape)
-
-    return () => {
-      window.removeEventListener('mousedown', closeMenu)
-      window.removeEventListener('keydown', handleEscape)
-    }
-  }, [projectContextMenu])
+  useProjectContextMenuDismiss({
+    projectContextMenu,
+    setProjectContextMenu,
+  })
 
   const activeSpaceName = useMemo(() => {
     if (!activeWorkspace || !activeWorkspace.activeSpaceId) {
@@ -391,6 +395,7 @@ export default function App(): React.JSX.Element {
             <WorkspaceCanvas
               workspaceId={activeWorkspace.id}
               workspacePath={activeWorkspace.path}
+              worktreesRoot={activeWorkspace.worktreesRoot}
               nodes={activeWorkspace.nodes}
               onNodesChange={handleWorkspaceNodesChange}
               onRequestPersistFlush={requestPersistFlush}
@@ -454,6 +459,12 @@ export default function App(): React.JSX.Element {
         <SettingsPanel
           settings={agentSettings}
           modelCatalogByProvider={providerModelCatalog}
+          activeWorkspaceName={activeWorkspace?.name ?? null}
+          activeWorkspacePath={activeWorkspace?.path ?? null}
+          activeWorkspaceWorktreesRoot={activeWorkspace?.worktreesRoot ?? ''}
+          onChangeActiveWorkspaceWorktreesRoot={worktreesRoot => {
+            handleWorkspaceWorktreesRootChange(worktreesRoot)
+          }}
           onRefreshProviderModels={provider => {
             void refreshProviderModels(provider)
           }}

@@ -2,7 +2,23 @@ import { Handle, Position } from '@xyflow/react'
 import { Pencil } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { JSX, PointerEvent as ReactPointerEvent } from 'react'
-import type { Size, TaskPriority, TaskRuntimeStatus } from '../types'
+import type {
+  AgentRuntimeStatus,
+  Size,
+  TaskAgentSessionRecord,
+  TaskPriority,
+  TaskRuntimeStatus,
+} from '../types'
+import type { AgentProvider } from '../../settings/agentConfig'
+import { TaskNodeAgentSessions } from './taskNode/TaskNodeAgentSessions'
+import { TaskNodeFooter } from './taskNode/TaskNodeFooter'
+import {
+  formatTaskTimestamp,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+  shouldStopWheelPropagation,
+  TASK_PRIORITY_LABEL,
+} from './taskNode/helpers'
 
 interface TaskNodeProps {
   title: string
@@ -13,6 +29,15 @@ interface TaskNodeProps {
   createdAt: string | null
   updatedAt: string | null
   linkedAgentTitle: string | null
+  linkedAgentNode: {
+    nodeId: string
+    title: string
+    provider: AgentProvider
+    status: AgentRuntimeStatus | null
+    startedAt: string | null
+  } | null
+  agentSessions: TaskAgentSessionRecord[]
+  currentDirectory: string
   width: number
   height: number
   onClose: () => void
@@ -23,52 +48,11 @@ interface TaskNodeProps {
   onRunAgent: () => void
   onResize: (size: Size) => void
   onStatusChange: (status: TaskRuntimeStatus) => void
-}
-
-function shouldStopWheelPropagation(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return true
-  }
-
-  const canvas = target.closest('.workspace-canvas')
-  if (!(canvas instanceof HTMLElement)) {
-    return true
-  }
-
-  return canvas.dataset.canvasInputMode !== 'trackpad'
+  onResumeAgentSession: (recordId: string) => void
+  onRemoveAgentSessionRecord: (recordId: string) => void
 }
 
 type ResizeAxis = 'horizontal' | 'vertical'
-
-const MIN_WIDTH = 320
-const MIN_HEIGHT = 220
-
-const TASK_STATUS_OPTIONS: Array<{ value: TaskRuntimeStatus; label: string }> = [
-  { value: 'todo', label: 'TODO' },
-  { value: 'doing', label: 'DOING' },
-  { value: 'ai_done', label: 'AI_DONE' },
-  { value: 'done', label: 'DONE' },
-]
-
-const TASK_PRIORITY_LABEL: Record<TaskPriority, string> = {
-  low: 'LOW',
-  medium: 'MEDIUM',
-  high: 'HIGH',
-  urgent: 'URGENT',
-}
-
-function formatTaskTimestamp(timestamp: string | null): string {
-  if (!timestamp) {
-    return '--'
-  }
-
-  const parsed = new Date(timestamp)
-  if (Number.isNaN(parsed.getTime())) {
-    return timestamp
-  }
-
-  return parsed.toISOString().replace('T', ' ').slice(0, 16)
-}
 
 export function TaskNode({
   title,
@@ -79,6 +63,9 @@ export function TaskNode({
   createdAt,
   updatedAt,
   linkedAgentTitle,
+  linkedAgentNode,
+  agentSessions,
+  currentDirectory,
   width,
   height,
   onClose,
@@ -89,6 +76,8 @@ export function TaskNode({
   onRunAgent,
   onResize,
   onStatusChange,
+  onResumeAgentSession,
+  onRemoveAgentSessionRecord,
 }: TaskNodeProps): JSX.Element {
   const resizeStartRef = useRef<{
     x: number
@@ -135,6 +124,8 @@ export function TaskNode({
 
     setRequirementDraft(requirement)
   }, [isRequirementEditing, requirement])
+
+  const resolvedLinkedAgentTitle = linkedAgentTitle ?? linkedAgentNode?.title ?? null
 
   const handleResizePointerDown = useCallback(
     (axis: ResizeAxis) => (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -354,7 +345,7 @@ export function TaskNode({
         </span>
 
         <span className="task-node__linked-agent" data-testid="task-node-linked-agent">
-          {linkedAgentTitle ? `Agent · ${linkedAgentTitle}` : 'Agent · Unassigned'}
+          {resolvedLinkedAgentTitle ? `Agent · ${resolvedLinkedAgentTitle}` : 'Agent · Unassigned'}
         </span>
       </div>
 
@@ -406,45 +397,20 @@ export function TaskNode({
         )}
       </div>
 
-      <div className="task-node__footer nodrag">
-        <select
-          data-testid="task-node-status-select"
-          value={status}
-          onChange={event => {
-            onStatusChange(event.target.value as TaskRuntimeStatus)
-          }}
-        >
-          {TASK_STATUS_OPTIONS.map(option => (
-            <option value={option.value} key={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      <TaskNodeAgentSessions
+        linkedAgentNode={linkedAgentNode}
+        agentSessions={agentSessions}
+        currentDirectory={currentDirectory}
+        onResumeAgentSession={onResumeAgentSession}
+        onRemoveAgentSessionRecord={onRemoveAgentSessionRecord}
+      />
 
-        <button
-          type="button"
-          className="task-node__assign-agent"
-          data-testid="task-node-assign-agent"
-          onClick={event => {
-            event.stopPropagation()
-            onAssignAgent()
-          }}
-        >
-          Assign
-        </button>
-
-        <button
-          type="button"
-          className="task-node__run-agent"
-          data-testid="task-node-run-agent"
-          onClick={event => {
-            event.stopPropagation()
-            onRunAgent()
-          }}
-        >
-          Run Agent
-        </button>
-      </div>
+      <TaskNodeFooter
+        status={status}
+        onStatusChange={onStatusChange}
+        onAssignAgent={onAssignAgent}
+        onRunAgent={onRunAgent}
+      />
 
       <button
         type="button"

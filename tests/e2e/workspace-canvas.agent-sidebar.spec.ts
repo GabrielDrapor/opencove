@@ -47,7 +47,7 @@ test.describe('Workspace Canvas - Agent Sidebar', () => {
         },
       ])
 
-      const agentItem = window.locator('.workspace-agent-item').first()
+      const agentItem = window.locator('.workspace-sidebar .workspace-agent-item').first()
       await expect(agentItem).toBeVisible()
 
       const zoomInButton = window.locator('.react-flow__controls-zoomin')
@@ -60,10 +60,10 @@ test.describe('Workspace Canvas - Agent Sidebar', () => {
 
       await agentItem.click()
 
-      const agentNode = window
+      const agentNodes = window
         .locator('.terminal-node')
         .filter({ has: window.locator('.terminal-node__title', { hasText: 'codex' }) })
-        .first()
+      const agentNode = agentNodes.first()
 
       await expect(agentNode).toBeVisible()
 
@@ -110,17 +110,6 @@ test.describe('Workspace Canvas - Agent Sidebar', () => {
         .toBeLessThan(140)
       await expect(agentNode.locator('.terminal-node__status')).toHaveText('Running')
 
-      await agentNode.locator('.terminal-node__action', { hasText: 'Stop' }).click()
-      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Stopped')
-
-      await agentNode.locator('.terminal-node__action', { hasText: 'Rerun' }).click()
-      await expect(agentNode.locator('.terminal-node__status')).toHaveText(/Restoring|Running/)
-      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Running')
-
-      await agentNode.locator('.terminal-node__action', { hasText: 'Resume' }).click()
-      await expect(agentNode.locator('.terminal-node__status')).toHaveText(/Restoring|Running/)
-      await expect(agentNode.locator('.terminal-node__status')).toHaveText('Running')
-
       const agentHeader = agentNode.locator('.terminal-node__header')
       await agentHeader.click()
 
@@ -156,6 +145,9 @@ test.describe('Workspace Canvas - Agent Sidebar', () => {
           return Math.max(delta.dx, delta.dy)
         })
         .toBeGreaterThan(180)
+
+      await agentNode.locator('.terminal-node__close').click()
+      await expect(agentNodes).toHaveCount(0)
     } finally {
       await electronApp.close()
     }
@@ -309,7 +301,6 @@ test.describe('Workspace Canvas - Agent Sidebar', () => {
 
       await requestItem.click()
       await expect(requestNode).toBeVisible()
-      await requestNode.locator('.terminal-node__action', { hasText: 'Stop' }).click()
 
       await expect(doingItem.locator('.workspace-agent-item__status--agent')).toHaveText('Working')
       await expect(requestItem.locator('.workspace-agent-item__status--agent')).toHaveText(

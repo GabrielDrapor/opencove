@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import type { Edge, Node, ReactFlowInstance } from '@xyflow/react'
-import type { TerminalNodeData } from '../../../types'
+import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import type {
   ContextMenuState,
   CreateNodeInput,
@@ -27,8 +27,11 @@ interface UseWorkspaceCanvasInteractionsParams {
   selectedNodeIdsRef: React.MutableRefObject<string[]>
   contextMenu: ContextMenuState | null
   workspacePath: string
+  activeSpaceId: string | null
+  spacesRef: React.MutableRefObject<WorkspaceSpaceState[]>
+  onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
   nodesRef: React.MutableRefObject<Node<TerminalNodeData>[]>
-  createNodeForSession: (input: CreateNodeInput) => Promise<void>
+  createNodeForSession: (input: CreateNodeInput) => Promise<Node<TerminalNodeData> | null>
 }
 
 export function useWorkspaceCanvasInteractions({
@@ -44,6 +47,9 @@ export function useWorkspaceCanvasInteractions({
   selectedNodeIdsRef,
   contextMenu,
   workspacePath,
+  activeSpaceId,
+  spacesRef,
+  onSpacesChange,
   nodesRef,
   createNodeForSession,
 }: UseWorkspaceCanvasInteractionsParams): {
@@ -193,19 +199,55 @@ export function useWorkspaceCanvasInteractions({
 
     setContextMenu(null)
 
+    const activeSpace = activeSpaceId
+      ? (spacesRef.current.find(space => space.id === activeSpaceId) ?? null)
+      : null
+
+    const resolvedCwd =
+      activeSpace && activeSpace.directoryPath.trim().length > 0
+        ? activeSpace.directoryPath
+        : workspacePath
+
     const spawned = await window.coveApi.pty.spawn({
-      cwd: workspacePath,
+      cwd: resolvedCwd,
       cols: 80,
       rows: 24,
     })
 
-    await createNodeForSession({
+    const created = await createNodeForSession({
       sessionId: spawned.sessionId,
       title: `terminal-${nodesRef.current.length + 1}`,
       anchor,
       kind: 'terminal',
+      executionDirectory: resolvedCwd,
+      expectedDirectory: resolvedCwd,
     })
-  }, [contextMenu, createNodeForSession, nodesRef, setContextMenu, workspacePath])
+
+    if (!created || !activeSpace) {
+      return
+    }
+
+    const nextSpaces = spacesRef.current.map(space => {
+      const filtered = space.nodeIds.filter(nodeId => nodeId !== created.id)
+
+      if (space.id !== activeSpace.id) {
+        return { ...space, nodeIds: filtered }
+      }
+
+      return { ...space, nodeIds: [...new Set([...filtered, created.id])] }
+    })
+
+    onSpacesChange(nextSpaces)
+  }, [
+    activeSpaceId,
+    contextMenu,
+    createNodeForSession,
+    nodesRef,
+    onSpacesChange,
+    setContextMenu,
+    spacesRef,
+    workspacePath,
+  ])
 
   return {
     clearNodeSelection,

@@ -33,6 +33,7 @@ import { TaskAssignerWindow } from './windows/TaskAssignerWindow'
 import { TaskCreatorWindow } from './windows/TaskCreatorWindow'
 import { TaskDeleteConfirmationWindow } from './windows/TaskDeleteConfirmationWindow'
 import { TaskEditorWindow } from './windows/TaskEditorWindow'
+import { SpaceWorktreeWindow } from './windows/SpaceWorktreeWindow'
 
 interface WorkspaceCanvasViewProps {
   canvasRef: React.RefObject<HTMLDivElement>
@@ -134,6 +135,18 @@ interface WorkspaceCanvasViewProps {
   setAgentLauncher: React.Dispatch<React.SetStateAction<AgentLauncherState | null>>
   closeAgentLauncher: () => void
   launchAgentNode: () => Promise<void>
+
+  spaceWorktreeSpaceId: string | null
+  worktreesRoot: string
+  openSpaceWorktree: (spaceId: string) => void
+  closeSpaceWorktree: () => void
+  updateSpaceDirectory: (
+    spaceId: string,
+    directoryPath: string,
+    options?: { markNodeDirectoryMismatch?: boolean },
+  ) => void
+  getSpaceBlockingNodes: (spaceId: string) => { agentNodeIds: string[]; terminalNodeIds: string[] }
+  closeNodesById: (nodeIds: string[]) => Promise<void>
 }
 
 export function WorkspaceCanvasView({
@@ -215,6 +228,13 @@ export function WorkspaceCanvasView({
   setAgentLauncher,
   closeAgentLauncher,
   launchAgentNode,
+  spaceWorktreeSpaceId,
+  worktreesRoot,
+  openSpaceWorktree,
+  closeSpaceWorktree,
+  updateSpaceDirectory,
+  getSpaceBlockingNodes,
+  closeNodesById,
 }: WorkspaceCanvasViewProps): React.JSX.Element {
   return (
     <div
@@ -259,6 +279,7 @@ export function WorkspaceCanvasView({
       >
         <Background variant={BackgroundVariant.Dots} size={1} gap={24} color="#20324f" />
         <WorkspaceSpaceRegionsOverlay
+          workspacePath={workspacePath}
           spaceVisuals={spaceVisuals}
           activeSpaceId={activeSpaceId}
           spaceDragOffset={spaceDragOffset}
@@ -270,6 +291,9 @@ export function WorkspaceCanvasView({
           commitSpaceRename={commitSpaceRename}
           cancelSpaceRename={cancelSpaceRename}
           startSpaceRename={startSpaceRename}
+          onOpenSpaceMenu={spaceId => {
+            openSpaceWorktree(spaceId)
+          }}
         />
 
         {selectedNodeCount > 0 ? (
@@ -357,6 +381,21 @@ export function WorkspaceCanvasView({
         setAgentLauncher={setAgentLauncher}
         closeAgentLauncher={closeAgentLauncher}
         launchAgentNode={launchAgentNode}
+      />
+
+      <SpaceWorktreeWindow
+        spaceId={spaceWorktreeSpaceId}
+        spaces={spaces}
+        nodes={nodes}
+        workspacePath={workspacePath}
+        worktreesRoot={worktreesRoot}
+        agentSettings={agentSettings}
+        onClose={closeSpaceWorktree}
+        onUpdateSpaceDirectory={(spaceId, directoryPath, options) => {
+          updateSpaceDirectory(spaceId, directoryPath, options)
+        }}
+        getBlockingNodes={spaceId => getSpaceBlockingNodes(spaceId)}
+        closeNodesById={nodeIds => closeNodesById(nodeIds)}
       />
     </div>
   )

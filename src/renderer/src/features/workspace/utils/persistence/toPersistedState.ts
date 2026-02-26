@@ -20,6 +20,7 @@ export function toPersistedState(
       id: workspace.id,
       name: workspace.name,
       path: workspace.path,
+      worktreesRoot: normalizeOptionalString(workspace.worktreesRoot) ?? '',
       viewport: normalizeWorkspaceViewport(workspace.viewport),
       isMinimapVisible:
         typeof workspace.isMinimapVisible === 'boolean'
@@ -54,6 +55,8 @@ export function toPersistedState(
         exitCode: node.data.exitCode,
         lastError: node.data.lastError,
         scrollback: normalizeScrollback(node.data.scrollback),
+        executionDirectory: normalizeOptionalString(node.data.executionDirectory),
+        expectedDirectory: normalizeOptionalString(node.data.expectedDirectory),
         agent: node.data.agent,
         task: node.data.task,
       })),

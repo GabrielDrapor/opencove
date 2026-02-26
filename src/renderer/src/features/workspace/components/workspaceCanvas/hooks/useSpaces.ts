@@ -434,6 +434,7 @@ export function useWorkspaceCanvasSpaces({
         return {
           id: space.id,
           name: space.name,
+          directoryPath: space.directoryPath,
           rect,
           hasExplicitRect,
         }

@@ -1,0 +1,45 @@
+import React from 'react'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { WorkspaceSpaceRegionsOverlay } from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/view/WorkspaceSpaceRegionsOverlay'
+
+vi.mock('@xyflow/react', () => {
+  return {
+    ViewportPortal: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }
+})
+
+describe('WorkspaceSpaceRegionsOverlay worktree menu', () => {
+  it('opens the worktree menu via ... pill', () => {
+    const onOpenSpaceMenu = vi.fn()
+
+    render(
+      <WorkspaceSpaceRegionsOverlay
+        workspacePath="/tmp"
+        spaceVisuals={[
+          {
+            id: 'space-1',
+            name: 'Infra',
+            directoryPath: '/tmp',
+            rect: { x: 0, y: 0, width: 200, height: 160 },
+            hasExplicitRect: true,
+          },
+        ]}
+        activeSpaceId={null}
+        spaceDragOffset={null}
+        handleSpaceDragHandlePointerDown={() => undefined}
+        editingSpaceId={null}
+        spaceRenameInputRef={{ current: null }}
+        spaceRenameDraft=""
+        setSpaceRenameDraft={() => undefined}
+        commitSpaceRename={() => undefined}
+        cancelSpaceRename={() => undefined}
+        startSpaceRename={() => undefined}
+        onOpenSpaceMenu={onOpenSpaceMenu}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('workspace-space-menu-space-1'))
+    expect(onOpenSpaceMenu).toHaveBeenCalledWith('space-1')
+  })
+})

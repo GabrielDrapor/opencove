@@ -5,10 +5,13 @@ import type { Size, TaskRuntimeStatus, TerminalNodeData } from '../../../types'
 export interface WorkspaceCanvasActionRefs {
   closeNodeRef: React.MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: React.MutableRefObject<(nodeId: string, desiredSize: Size) => void>
-  stopAgentNodeRef: React.MutableRefObject<(nodeId: string) => Promise<void>>
-  rerunAgentNodeRef: React.MutableRefObject<(nodeId: string) => Promise<void>>
-  resumeAgentNodeRef: React.MutableRefObject<(nodeId: string) => Promise<void>>
   runTaskAgentRef: React.MutableRefObject<(nodeId: string) => Promise<void>>
+  resumeTaskAgentSessionRef: React.MutableRefObject<
+    (taskNodeId: string, recordId: string) => Promise<void>
+  >
+  removeTaskAgentSessionRecordRef: React.MutableRefObject<
+    (taskNodeId: string, recordId: string) => void
+  >
   openTaskEditorRef: React.MutableRefObject<(nodeId: string) => void>
   quickUpdateTaskTitleRef: React.MutableRefObject<(nodeId: string, title: string) => void>
   quickUpdateTaskRequirementRef: React.MutableRefObject<
@@ -30,17 +33,14 @@ export function useWorkspaceCanvasActionRefs(): WorkspaceCanvasActionRefs {
   const resizeNodeRef = useRef<(nodeId: string, desiredSize: Size) => void>(
     (_nodeId: string, _desiredSize: Size) => undefined,
   )
-  const stopAgentNodeRef = useRef<(nodeId: string) => Promise<void>>(
-    async (_nodeId: string) => undefined,
-  )
-  const rerunAgentNodeRef = useRef<(nodeId: string) => Promise<void>>(
-    async (_nodeId: string) => undefined,
-  )
-  const resumeAgentNodeRef = useRef<(nodeId: string) => Promise<void>>(
-    async (_nodeId: string) => undefined,
-  )
   const runTaskAgentRef = useRef<(nodeId: string) => Promise<void>>(
     async (_nodeId: string) => undefined,
+  )
+  const resumeTaskAgentSessionRef = useRef<(taskNodeId: string, recordId: string) => Promise<void>>(
+    async (_taskNodeId: string, _recordId: string) => undefined,
+  )
+  const removeTaskAgentSessionRecordRef = useRef<(taskNodeId: string, recordId: string) => void>(
+    (_taskNodeId: string, _recordId: string) => undefined,
   )
   const openTaskEditorRef = useRef<(nodeId: string) => void>(() => undefined)
   const quickUpdateTaskTitleRef = useRef<(nodeId: string, title: string) => void>(
@@ -70,10 +70,9 @@ export function useWorkspaceCanvasActionRefs(): WorkspaceCanvasActionRefs {
   return {
     closeNodeRef,
     resizeNodeRef,
-    stopAgentNodeRef,
-    rerunAgentNodeRef,
-    resumeAgentNodeRef,
     runTaskAgentRef,
+    resumeTaskAgentSessionRef,
+    removeTaskAgentSessionRecordRef,
     openTaskEditorRef,
     quickUpdateTaskTitleRef,
     quickUpdateTaskRequirementRef,
@@ -91,8 +90,6 @@ interface SyncActionRefsParams {
   actionRefs: WorkspaceCanvasActionRefs
   closeNode: (nodeId: string) => Promise<void>
   resizeNode: (nodeId: string, desiredSize: Size) => void
-  stopAgentNode: (nodeId: string) => Promise<void>
-  launchAgentInNode: (nodeId: string, mode: 'new' | 'resume') => Promise<void>
   updateNodeScrollback: (nodeId: string, scrollback: string) => void
   updateTerminalTitle: (nodeId: string, title: string) => void
   renameTerminalTitle: (nodeId: string, title: string) => void
@@ -105,8 +102,6 @@ export function useWorkspaceCanvasSyncActionRefs({
   actionRefs,
   closeNode,
   resizeNode,
-  stopAgentNode,
-  launchAgentInNode,
   updateNodeScrollback,
   updateTerminalTitle,
   renameTerminalTitle,
@@ -121,22 +116,6 @@ export function useWorkspaceCanvasSyncActionRefs({
   useEffect(() => {
     actionRefs.resizeNodeRef.current = resizeNode
   }, [actionRefs.resizeNodeRef, resizeNode])
-
-  useEffect(() => {
-    actionRefs.stopAgentNodeRef.current = stopAgentNode
-  }, [actionRefs.stopAgentNodeRef, stopAgentNode])
-
-  useEffect(() => {
-    actionRefs.rerunAgentNodeRef.current = async nodeId => {
-      await launchAgentInNode(nodeId, 'new')
-    }
-  }, [actionRefs.rerunAgentNodeRef, launchAgentInNode])
-
-  useEffect(() => {
-    actionRefs.resumeAgentNodeRef.current = async nodeId => {
-      await launchAgentInNode(nodeId, 'resume')
-    }
-  }, [actionRefs.resumeAgentNodeRef, launchAgentInNode])
 
   useEffect(() => {
     actionRefs.updateNodeScrollbackRef.current = (nodeId, scrollback) => {

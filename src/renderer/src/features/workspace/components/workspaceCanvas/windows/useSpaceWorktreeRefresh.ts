@@ -1,0 +1,109 @@
+import { useCallback } from 'react'
+import type { GitWorktreeInfo } from '@shared/types/api'
+import type { WorkspaceSpaceState } from '../../../types'
+import { toErrorMessage } from '../helpers'
+import { getWorktreeApiMethod, normalizeComparablePath } from './spaceWorktree.shared'
+
+export function useSpaceWorktreeRefresh({
+  space,
+  workspacePath,
+  setIsLoading,
+  setError,
+  setBranches,
+  setCurrentBranch,
+  setWorktrees,
+  setSelectedWorktreePath,
+  setExistingBranchName,
+  setStartPoint,
+}: {
+  space: WorkspaceSpaceState | null
+  workspacePath: string
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setError: React.Dispatch<React.SetStateAction<string | null>>
+  setBranches: React.Dispatch<React.SetStateAction<string[]>>
+  setCurrentBranch: React.Dispatch<React.SetStateAction<string | null>>
+  setWorktrees: React.Dispatch<React.SetStateAction<GitWorktreeInfo[]>>
+  setSelectedWorktreePath: React.Dispatch<React.SetStateAction<string>>
+  setExistingBranchName: React.Dispatch<React.SetStateAction<string>>
+  setStartPoint: React.Dispatch<React.SetStateAction<string>>
+}): (options?: { preferredWorktreePath?: string }) => Promise<void> {
+  return useCallback(
+    async (options?: { preferredWorktreePath?: string }) => {
+      if (!space) {
+        return
+      }
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const listBranches = getWorktreeApiMethod('listBranches')
+        const listWorktrees = getWorktreeApiMethod('listWorktrees')
+        const [branchesResult, worktreesResult] = await Promise.all([
+          listBranches({ repoPath: workspacePath }),
+          listWorktrees({ repoPath: workspacePath }),
+        ])
+
+        setBranches(branchesResult.branches)
+        setCurrentBranch(branchesResult.current)
+        setWorktrees(worktreesResult.worktrees)
+
+        const preferredPath = options?.preferredWorktreePath
+          ? normalizeComparablePath(options.preferredWorktreePath)
+          : null
+
+        setSelectedWorktreePath(previous => {
+          const normalizedPrevious = normalizeComparablePath(previous)
+          const availablePaths = worktreesResult.worktrees.map(entry => entry.path)
+          const previousExists =
+            normalizedPrevious.length > 0 &&
+            availablePaths.some(path => normalizeComparablePath(path) === normalizedPrevious)
+          if (previousExists) {
+            return previous
+          }
+
+          if (preferredPath) {
+            const preferred = availablePaths.find(
+              path => normalizeComparablePath(path) === preferredPath,
+            )
+            if (preferred) {
+              return preferred
+            }
+          }
+
+          return availablePaths[0] ?? ''
+        })
+
+        setExistingBranchName(previous =>
+          previous.trim().length > 0
+            ? previous
+            : (branchesResult.current ?? branchesResult.branches[0] ?? ''),
+        )
+
+        setStartPoint(previous => {
+          if (previous !== 'HEAD') {
+            return previous
+          }
+
+          return branchesResult.current ?? previous
+        })
+      } catch (fetchError) {
+        setError(`Failed to load worktree info: ${toErrorMessage(fetchError)}`)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [
+      setBranches,
+      setCurrentBranch,
+      setError,
+      setExistingBranchName,
+      setIsLoading,
+      setSelectedWorktreePath,
+      setStartPoint,
+      setWorktrees,
+      space,
+      workspacePath,
+    ],
+  )
+}

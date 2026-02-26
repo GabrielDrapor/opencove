@@ -14,6 +14,7 @@ import type { AgentProvider, AgentSettings } from '../../../settings/agentConfig
 export interface WorkspaceCanvasProps {
   workspaceId: string
   workspacePath: string
+  worktreesRoot: string
   nodes: Node<TerminalNodeData>[]
   onNodesChange: (nodes: Node<TerminalNodeData>[]) => void
   onRequestPersistFlush?: () => void
@@ -64,6 +65,7 @@ export interface EmptySelectionPromptState {
 export interface SpaceVisual {
   id: string
   name: string
+  directoryPath: string
   rect: WorkspaceSpaceRect
   hasExplicitRect: boolean
 }
@@ -142,6 +144,8 @@ export interface CreateNodeInput {
   anchor: Point
   kind: 'terminal' | 'agent'
   agent?: AgentNodeData | null
+  executionDirectory?: string | null
+  expectedDirectory?: string | null
 }
 
 export type QuickUpdateTaskTitle = (nodeId: string, title: string) => void

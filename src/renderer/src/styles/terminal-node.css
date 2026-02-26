@@ -200,6 +200,12 @@
   background: rgba(105, 66, 17, 0.5);
 }
 
+.workspace-agent-item__status--failed {
+  border-color: rgba(255, 115, 115, 0.5);
+  color: #ffc0c0;
+  background: rgba(120, 25, 25, 0.45);
+}
+
 .workspace-agent-item__status--todo {
   border-color: rgba(126, 141, 168, 0.52);
   color: #d2dae8;
@@ -290,10 +296,25 @@
   gap: 8px;
 }
 
-.terminal-node__agent-controls {
+.terminal-node__header-badges {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.terminal-node__badge {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: calc(10px * var(--cove-ui-font-scale));
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.terminal-node__badge--warning {
+  background: rgba(255, 190, 114, 0.18);
+  color: #ffe9c2;
+  border: 1px solid rgba(255, 190, 114, 0.45);
 }
 
 .terminal-node__status {

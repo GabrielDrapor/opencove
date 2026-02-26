@@ -1,13 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import { resolveAgentModel, type AgentSettings } from '../../../../settings/agentConfig'
-import type { AgentNodeData, Point, TerminalNodeData } from '../../../types'
+import type { AgentNodeData, Point, TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import { normalizeDirectoryPath, toErrorMessage, toSuggestedWorktreePath } from '../helpers'
 import type { AgentLauncherState, ContextMenuState, CreateNodeInput } from '../types'
 
 interface UseAgentLauncherParams {
   agentSettings: AgentSettings
   workspacePath: string
+  activeSpaceId: string | null
+  spacesRef: React.MutableRefObject<WorkspaceSpaceState[]>
+  onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
   contextMenu: ContextMenuState | null
   setContextMenu: (next: ContextMenuState | null) => void
   createNodeForSession: (input: CreateNodeInput) => Promise<Node<TerminalNodeData> | null>
@@ -20,6 +23,9 @@ interface UseAgentLauncherParams {
 export function useWorkspaceCanvasAgentLauncher({
   agentSettings,
   workspacePath,
+  activeSpaceId,
+  spacesRef,
+  onSpacesChange,
   contextMenu,
   setContextMenu,
   createNodeForSession,
@@ -91,9 +97,18 @@ export function useWorkspaceCanvasAgentLauncher({
 
     const normalizedModel = agentLauncher.model.trim()
 
+    const activeSpace = activeSpaceId
+      ? (spacesRef.current.find(space => space.id === activeSpaceId) ?? null)
+      : null
+
+    const activeSpaceDirectory =
+      activeSpace && activeSpace.directoryPath.trim().length > 0
+        ? activeSpace.directoryPath
+        : workspacePath
+
     const executionDirectory =
       agentLauncher.directoryMode === 'workspace'
-        ? workspacePath
+        ? activeSpaceDirectory
         : normalizeDirectoryPath(workspacePath, agentLauncher.customDirectory)
 
     if (executionDirectory.trim().length === 0) {
@@ -143,6 +158,7 @@ export function useWorkspaceCanvasAgentLauncher({
         launchMode: launched.launchMode,
         resumeSessionId: launched.resumeSessionId,
         executionDirectory,
+        expectedDirectory: executionDirectory,
         directoryMode: agentLauncher.directoryMode,
         customDirectory:
           agentLauncher.directoryMode === 'custom' ? agentLauncher.customDirectory.trim() : null,
@@ -171,6 +187,27 @@ export function useWorkspaceCanvasAgentLauncher({
         return
       }
 
+      if (activeSpace) {
+        const targetSpace = activeSpace
+        const nextSpaces = spacesRef.current.map(space => {
+          const filtered = space.nodeIds.filter(nodeId => nodeId !== created.id)
+
+          if (space.id !== targetSpace.id) {
+            return {
+              ...space,
+              nodeIds: filtered,
+            }
+          }
+
+          return {
+            ...space,
+            nodeIds: [...new Set([...filtered, created.id])],
+          }
+        })
+
+        onSpacesChange(nextSpaces)
+      }
+
       setAgentLauncher(null)
     } catch (error) {
       setAgentLauncher(prev =>
@@ -183,7 +220,15 @@ export function useWorkspaceCanvasAgentLauncher({
           : prev,
       )
     }
-  }, [agentLauncher, buildAgentNodeTitle, createNodeForSession, workspacePath])
+  }, [
+    activeSpaceId,
+    agentLauncher,
+    buildAgentNodeTitle,
+    createNodeForSession,
+    onSpacesChange,
+    spacesRef,
+    workspacePath,
+  ])
 
   const launcherModelOptions = useMemo(() => {
     if (!agentLauncher) {

@@ -253,6 +253,57 @@
   color: rgba(167, 190, 233, 0.92);
 }
 
+.task-node__agents {
+  border-top: 1px solid rgba(88, 119, 203, 0.25);
+  background: rgba(13, 22, 40, 0.55);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.task-node__agents-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: calc(11px * var(--cove-ui-font-scale));
+  color: #b9cef5;
+}
+
+.task-node__agents-count {
+  border: 1px solid rgba(139, 168, 234, 0.35);
+  background: rgba(34, 52, 96, 0.35);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: calc(10px * var(--cove-ui-font-scale));
+  color: rgba(214, 230, 255, 0.92);
+}
+
+.task-node__agents-empty {
+  font-size: calc(11px * var(--cove-ui-font-scale));
+  color: #8aa2d1;
+}
+
+.task-node__agents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-agent-session-menu {
+  z-index: 20;
+}
+
+.task-agent-resume-backdrop {
+  z-index: 26;
+}
+
+.task-agent-resume.cove-window {
+  width: min(520px, calc(100vw - 48px));
+}
+
 .task-node__footer {
   border-top: 1px solid rgba(88, 119, 203, 0.4);
   padding: 8px 10px;

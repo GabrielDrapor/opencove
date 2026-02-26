@@ -1,18 +1,27 @@
 import type {
   AttachTerminalInput,
+  CreateGitWorktreeInput,
+  CreateGitWorktreeResult,
   DetachTerminalInput,
   EnsureDirectoryInput,
   KillTerminalInput,
   LaunchAgentInput,
   LaunchAgentResult,
+  ListGitBranchesInput,
+  ListGitBranchesResult,
+  ListGitWorktreesInput,
+  ListGitWorktreesResult,
   ListAgentModelsInput,
   ListAgentModelsResult,
   ResizeTerminalInput,
+  RemoveGitWorktreeInput,
   SnapshotTerminalInput,
   SnapshotTerminalResult,
   SpawnTerminalInput,
   SuggestTaskTitleInput,
   SuggestTaskTitleResult,
+  SuggestWorktreeNamesInput,
+  SuggestWorktreeNamesResult,
   TerminalDataEvent,
   TerminalDoneEvent,
   TerminalExitEvent,
@@ -29,6 +38,13 @@ export interface CoveApi {
   workspace: {
     selectDirectory: () => Promise<WorkspaceDirectory | null>
     ensureDirectory: (payload: EnsureDirectoryInput) => Promise<void>
+  }
+  worktree: {
+    listBranches: (payload: ListGitBranchesInput) => Promise<ListGitBranchesResult>
+    listWorktrees: (payload: ListGitWorktreesInput) => Promise<ListGitWorktreesResult>
+    create: (payload: CreateGitWorktreeInput) => Promise<CreateGitWorktreeResult>
+    remove: (payload: RemoveGitWorktreeInput) => Promise<void>
+    suggestNames: (payload: SuggestWorktreeNamesInput) => Promise<SuggestWorktreeNamesResult>
   }
   pty: {
     spawn: (payload: SpawnTerminalInput) => Promise<{ sessionId: string }>

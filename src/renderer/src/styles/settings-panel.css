@@ -274,9 +274,28 @@
   gap: 12px;
 }
 
+.settings-panel__row--actions {
+  align-items: start;
+}
+
 .settings-panel__row span {
   font-size: calc(12px * var(--cove-ui-font-scale));
   color: #b8caef;
+}
+
+.settings-panel__path-preview {
+  margin: 0;
+  font-size: calc(12px * var(--cove-ui-font-scale));
+  color: #b8caef;
+  border: 1px solid rgba(90, 121, 210, 0.36);
+  border-radius: 8px;
+  background: rgba(8, 14, 28, 0.72);
+  padding: 8px 10px;
+  overflow-wrap: anywhere;
+}
+
+.settings-panel__path-preview--inline {
+  justify-self: stretch;
 }
 
 .settings-panel__hint {

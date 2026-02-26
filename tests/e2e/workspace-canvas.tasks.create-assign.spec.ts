@@ -59,7 +59,7 @@ test.describe('Workspace Canvas - Tasks (Create & Assign)', () => {
       await taskNode.locator('[data-testid="task-node-run-agent"]').click()
 
       await expect(window.locator('.terminal-node')).toHaveCount(1)
-      await expect(window.locator('.workspace-agent-item')).toHaveCount(1)
+      await expect(window.locator('.workspace-sidebar .workspace-agent-item')).toHaveCount(1)
 
       const taskStatus = taskNode.locator('[data-testid="task-node-status-select"]')
       await expect(taskStatus).toHaveValue('doing')

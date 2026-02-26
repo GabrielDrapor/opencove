@@ -24,14 +24,17 @@ import { useWorkspaceCanvasPtyTaskCompletion } from './workspaceCanvas/hooks/use
 import { useWorkspaceCanvasTaskAgentEdges } from './workspaceCanvas/hooks/useTaskAgentEdges'
 import { useWorkspaceCanvasTaskActions } from './workspaceCanvas/hooks/useTaskActions'
 import { useWorkspaceCanvasTaskAssigner } from './workspaceCanvas/hooks/useTaskAssigner'
+import { useWorkspaceCanvasTaskAssignerOptions } from './workspaceCanvas/hooks/useTaskAssignerOptions'
 import { useWorkspaceCanvasTaskCreator } from './workspaceCanvas/hooks/useTaskCreator'
 import { useWorkspaceCanvasTaskDeleteConfirmation } from './workspaceCanvas/hooks/useTaskDeleteConfirmation'
 import { useWorkspaceCanvasTaskEditor } from './workspaceCanvas/hooks/useTaskEditor'
 import { useWorkspaceCanvasTrackpadGestures } from './workspaceCanvas/hooks/useTrackpadGestures'
 import { useWorkspaceCanvasSpaceDrag } from './workspaceCanvas/hooks/useSpaceDrag'
+import { useWorkspaceCanvasSpaceDirectoryOps } from './workspaceCanvas/hooks/useSpaceDirectoryOps'
 import { useWorkspaceCanvasSpaces } from './workspaceCanvas/hooks/useSpaces'
 import { useWorkspaceCanvasNodeTypes } from './workspaceCanvas/nodeTypes'
 import { WorkspaceCanvasView } from './workspaceCanvas/WorkspaceCanvasView'
+import { resolveWorkspaceMinimapNodeColor } from './workspaceCanvas/minimap'
 import type {
   ContextMenuState,
   EmptySelectionPromptState,
@@ -43,6 +46,7 @@ import type {
 function WorkspaceCanvasInner({
   workspaceId,
   workspacePath,
+  worktreesRoot,
   nodes,
   onNodesChange,
   onRequestPersistFlush,
@@ -78,6 +82,7 @@ function WorkspaceCanvasInner({
   const isShiftPressedRef = useRef(false)
   const trackpadGestureLockRef = useRef<TrackpadGestureLockState | null>(null)
   const viewportRef = useRef<Viewport>(viewport)
+  const [spaceWorktreeSpaceId, setSpaceWorktreeSpaceId] = useState<string | null>(null)
 
   const {
     nodesRef,
@@ -101,6 +106,17 @@ function WorkspaceCanvasInner({
     onRequestPersistFlush,
     defaultTerminalWindowScalePercent: agentSettings.defaultTerminalWindowScalePercent,
   })
+
+  const { updateSpaceDirectory, getSpaceBlockingNodes, closeNodesById } =
+    useWorkspaceCanvasSpaceDirectoryOps({
+      workspacePath,
+      spacesRef,
+      nodesRef,
+      setNodes,
+      onSpacesChange,
+      onRequestPersistFlush,
+      closeNode,
+    })
 
   const {
     editingSpaceId,
@@ -146,13 +162,12 @@ function WorkspaceCanvasInner({
     setEmptySelectionPrompt,
   })
 
-  const { buildAgentNodeTitle, launchAgentInNode, stopAgentNode } =
-    useWorkspaceCanvasAgentNodeLifecycle({
-      nodesRef,
-      setNodes,
-      bumpAgentLaunchToken,
-      isAgentLaunchTokenCurrent,
-    })
+  const { buildAgentNodeTitle, launchAgentInNode } = useWorkspaceCanvasAgentNodeLifecycle({
+    nodesRef,
+    setNodes,
+    bumpAgentLaunchToken,
+    isAgentLaunchTokenCurrent,
+  })
 
   const {
     agentLauncher,
@@ -164,6 +179,9 @@ function WorkspaceCanvasInner({
   } = useWorkspaceCanvasAgentLauncher({
     agentSettings,
     workspacePath,
+    activeSpaceId,
+    spacesRef,
+    onSpacesChange,
     contextMenu,
     setContextMenu,
     createNodeForSession,
@@ -177,6 +195,8 @@ function WorkspaceCanvasInner({
 
   const { suggestTaskTitle } = useWorkspaceCanvasTaskActions({
     nodesRef,
+    spacesRef,
+    onSpacesChange,
     setNodes,
     createNodeForSession,
     buildAgentNodeTitle,
@@ -186,6 +206,8 @@ function WorkspaceCanvasInner({
     taskTagOptions,
     onRequestPersistFlush,
     runTaskAgentRef: actionRefs.runTaskAgentRef,
+    resumeTaskAgentSessionRef: actionRefs.resumeTaskAgentSessionRef,
+    removeTaskAgentSessionRecordRef: actionRefs.removeTaskAgentSessionRecordRef,
     updateTaskStatusRef: actionRefs.updateTaskStatusRef,
     quickUpdateTaskTitleRef: actionRefs.quickUpdateTaskTitleRef,
     quickUpdateTaskRequirementRef: actionRefs.quickUpdateTaskRequirementRef,
@@ -220,6 +242,8 @@ function WorkspaceCanvasInner({
   const { taskAssigner, setTaskAssigner, closeTaskAssigner, applyTaskAssignment } =
     useWorkspaceCanvasTaskAssigner({
       nodesRef,
+      spacesRef,
+      onSpacesChange,
       setNodes,
       onRequestPersistFlush,
       setContextMenu,
@@ -283,8 +307,6 @@ function WorkspaceCanvasInner({
     actionRefs,
     closeNode,
     resizeNode,
-    stopAgentNode,
-    launchAgentInNode,
     updateNodeScrollback,
     updateTerminalTitle,
     renameTerminalTitle,
@@ -297,6 +319,8 @@ function WorkspaceCanvasInner({
 
   const nodeTypes = useWorkspaceCanvasNodeTypes({
     nodesRef,
+    spacesRef,
+    workspacePath,
     terminalFontSize: agentSettings.terminalFontSize,
     ...actionRefs,
   })
@@ -325,6 +349,9 @@ function WorkspaceCanvasInner({
     selectedNodeIdsRef,
     contextMenu,
     workspacePath,
+    activeSpaceId,
+    spacesRef,
+    onSpacesChange,
     nodesRef,
     createNodeForSession,
   })
@@ -338,8 +365,8 @@ function WorkspaceCanvasInner({
     isNodeDraggingRef,
   })
 
-  const taskTitleProviderLabel = AGENT_PROVIDER_LABEL[resolveTaskTitleProvider(agentSettings)]
-  const taskTitleModelLabel = resolveTaskTitleModel(agentSettings) ?? 'default model'
+  const taskTitleProviderLabel = AGENT_PROVIDER_LABEL[resolveTaskTitleProvider(agentSettings)],
+    taskTitleModelLabel = resolveTaskTitleModel(agentSettings) ?? 'default model'
   const handleViewportMoveEnd = useCallback(
     (_event: MouseEvent | TouchEvent | null, nextViewport: Viewport) => {
       const normalizedViewport = {
@@ -353,43 +380,14 @@ function WorkspaceCanvasInner({
     },
     [onViewportChange],
   )
-  const minimapNodeColor = useCallback((node: Node<TerminalNodeData>): string => {
-    switch (node.data.kind) {
-      case 'agent':
-        return 'rgba(111, 188, 255, 0.72)'
-      case 'task':
-        return 'rgba(168, 160, 255, 0.72)'
-      default:
-        return 'rgba(130, 156, 255, 0.72)'
-    }
-  }, [])
+  const minimapNodeColor = resolveWorkspaceMinimapNodeColor
 
-  const taskAssignerAgentOptions = useMemo(() => {
-    const taskTitleById = new Map(
-      nodes.filter(node => node.data.kind === 'task').map(node => [node.id, node.data.title]),
-    )
-
-    return nodes
-      .filter(node => node.data.kind === 'agent' && node.data.agent)
-      .map(node => ({
-        nodeId: node.id,
-        title: node.data.title,
-        status: node.data.status,
-        linkedTaskTitle: node.data.agent?.taskId
-          ? (taskTitleById.get(node.data.agent.taskId) ?? null)
-          : null,
-      }))
-  }, [nodes])
-
-  const activeTaskForAssigner = useMemo(() => {
-    if (!taskAssigner) {
-      return null
-    }
-
-    return (
-      nodes.find(node => node.id === taskAssigner.taskNodeId && node.data.kind === 'task') ?? null
-    )
-  }, [nodes, taskAssigner])
+  const { taskAssignerAgentOptions, activeTaskForAssigner } = useWorkspaceCanvasTaskAssignerOptions(
+    {
+      nodes,
+      taskAssigner,
+    },
+  )
 
   const taskAgentEdges = useWorkspaceCanvasTaskAgentEdges(nodes)
 
@@ -479,6 +477,13 @@ function WorkspaceCanvasInner({
       setAgentLauncher={setAgentLauncher}
       closeAgentLauncher={closeAgentLauncher}
       launchAgentNode={launchAgentNode}
+      spaceWorktreeSpaceId={spaceWorktreeSpaceId}
+      worktreesRoot={worktreesRoot}
+      openSpaceWorktree={spaceId => setSpaceWorktreeSpaceId(spaceId)}
+      closeSpaceWorktree={() => setSpaceWorktreeSpaceId(null)}
+      updateSpaceDirectory={updateSpaceDirectory}
+      getSpaceBlockingNodes={getSpaceBlockingNodes}
+      closeNodesById={closeNodesById}
     />
   )
 }

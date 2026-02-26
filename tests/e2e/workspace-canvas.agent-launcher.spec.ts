@@ -59,7 +59,7 @@ test.describe('Workspace Canvas - Agent Launcher', () => {
       await expect(window.locator('.terminal-node').first()).toContainText(
         '[cove-test-agent] codex new',
       )
-      await expect(window.locator('.workspace-agent-item')).toHaveCount(1)
+      await expect(window.locator('.workspace-sidebar .workspace-agent-item')).toHaveCount(1)
     } finally {
       await electronApp.close()
     }

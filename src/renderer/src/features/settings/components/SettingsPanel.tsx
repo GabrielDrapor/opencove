@@ -20,6 +20,7 @@ import { ModelOverrideSection } from './settingsPanel/ModelOverrideSection'
 import { SettingsPanelNav } from './settingsPanel/SettingsPanelNav'
 import { TaskTagsSection } from './settingsPanel/TaskTagsSection'
 import { TaskTitleSection } from './settingsPanel/TaskTitleSection'
+import { WorkspaceSection } from './settingsPanel/WorkspaceSection'
 
 interface ProviderModelCatalogEntry {
   models: string[]
@@ -32,12 +33,22 @@ interface ProviderModelCatalogEntry {
 interface SettingsPanelProps {
   settings: AgentSettings
   modelCatalogByProvider: Record<AgentProvider, ProviderModelCatalogEntry>
+  activeWorkspaceName: string | null
+  activeWorkspacePath: string | null
+  activeWorkspaceWorktreesRoot: string
+  onChangeActiveWorkspaceWorktreesRoot: (worktreesRoot: string) => void
   onRefreshProviderModels: (provider: AgentProvider) => void
   onChange: (settings: AgentSettings) => void
   onClose: () => void
 }
 
-type SettingsSectionId = 'general' | 'canvas' | 'task-title' | 'task-tags' | 'model-override'
+type SettingsSectionId =
+  | 'general'
+  | 'workspace'
+  | 'canvas'
+  | 'task-title'
+  | 'task-tags'
+  | 'model-override'
 
 interface SettingsSection {
   id: SettingsSectionId
@@ -50,6 +61,11 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     id: 'general',
     title: 'General',
     anchorId: 'settings-section-general',
+  },
+  {
+    id: 'workspace',
+    title: 'Workspace',
+    anchorId: 'settings-section-workspace',
   },
   {
     id: 'canvas',
@@ -83,6 +99,10 @@ function createInitialInputState(): Record<AgentProvider, string> {
 export function SettingsPanel({
   settings,
   modelCatalogByProvider,
+  activeWorkspaceName,
+  activeWorkspacePath,
+  activeWorkspaceWorktreesRoot,
+  onChangeActiveWorkspaceWorktreesRoot,
   onRefreshProviderModels,
   onChange,
   onClose,
@@ -343,6 +363,15 @@ export function SettingsPanel({
               defaultProvider={settings.defaultProvider}
               onChangeDefaultProvider={provider => {
                 updateDefaultProvider(provider)
+              }}
+            />
+
+            <WorkspaceSection
+              workspaceName={activeWorkspaceName}
+              workspacePath={activeWorkspacePath}
+              worktreesRoot={activeWorkspaceWorktreesRoot}
+              onChangeWorktreesRoot={worktreesRoot => {
+                onChangeActiveWorkspaceWorktreesRoot(worktreesRoot)
               }}
             />
 

@@ -5,6 +5,7 @@ export interface TerminalNodeProps {
   title: string
   kind: WorkspaceNodeKind
   status: AgentRuntimeStatus | null
+  directoryMismatch?: { executionDirectory: string; expectedDirectory: string } | null
   lastError: string | null
   width: number
   height: number
@@ -16,7 +17,4 @@ export interface TerminalNodeProps {
   onTitleCommit?: (title: string) => void
   onCommandRun?: (command: string) => void
   onInteractionStart?: () => void
-  onStop?: () => void
-  onRerun?: () => void
-  onResume?: () => void
 }
