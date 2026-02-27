@@ -67,11 +67,9 @@ function WorkspaceCanvasInner({
   const [detectedCanvasInputMode, setDetectedCanvasInputMode] =
     useState<DetectedCanvasInputMode>('mouse')
   const [isShiftPressed, setIsShiftPressed] = useState(false)
-
   const reactFlow = useReactFlow<Node<TerminalNodeData>, Edge>()
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const restoredViewportWorkspaceIdRef = useRef<string | null>(null)
-
   const spacesRef = useRef(spaces)
   const selectedNodeIdsRef = useRef<string[]>([])
   const selectionDraftRef = useRef<SelectionDraftState | null>(null)
@@ -81,7 +79,6 @@ function WorkspaceCanvasInner({
   const trackpadGestureLockRef = useRef<TrackpadGestureLockState | null>(null)
   const viewportRef = useRef<Viewport>(viewport)
   const [spaceWorktreeSpaceId, setSpaceWorktreeSpaceId] = useState<string | null>(null)
-
   const {
     nodesRef,
     isNodeDraggingRef,
@@ -105,7 +102,6 @@ function WorkspaceCanvasInner({
     onRequestPersistFlush,
     defaultTerminalWindowScalePercent: agentSettings.defaultTerminalWindowScalePercent,
   })
-
   const { updateSpaceDirectory, getSpaceBlockingNodes, closeNodesById } =
     useWorkspaceCanvasSpaceDirectoryOps({
       workspacePath,
@@ -116,7 +112,6 @@ function WorkspaceCanvasInner({
       onRequestPersistFlush,
       closeNode,
     })
-
   const {
     editingSpaceId,
     spaceRenameDraft,
@@ -145,7 +140,6 @@ function WorkspaceCanvasInner({
     setContextMenu,
     setEmptySelectionPrompt,
   })
-
   const { spaceFramePreview, handleSpaceDragHandlePointerDown } = useWorkspaceCanvasSpaceDrag({
     workspaceId,
     reactFlow,
@@ -159,7 +153,12 @@ function WorkspaceCanvasInner({
     setEmptySelectionPrompt,
   })
 
-  const { handleNodeDragStop, handleSelectionDragStop } = useWorkspaceCanvasSpaceOwnership({
+  const {
+    handleNodeDragStart,
+    handleSelectionDragStart,
+    handleNodeDragStop,
+    handleSelectionDragStop,
+  } = useWorkspaceCanvasSpaceOwnership({
     workspacePath,
     reactFlow,
     spacesRef,
@@ -417,6 +416,8 @@ function WorkspaceCanvasInner({
       onNodeContextMenu={handleNodeContextMenu}
       onSelectionContextMenu={handleSelectionContextMenu}
       onSelectionChange={handleSelectionChange}
+      onNodeDragStart={handleNodeDragStart}
+      onSelectionDragStart={handleSelectionDragStart}
       onNodeDragStop={handleNodeDragStop}
       onSelectionDragStop={handleSelectionDragStop}
       onMoveEnd={handleViewportMoveEnd}
@@ -489,7 +490,6 @@ function WorkspaceCanvasInner({
     />
   )
 }
-
 export function WorkspaceCanvas(props: WorkspaceCanvasProps): React.JSX.Element {
   return (
     <ReactFlowProvider>

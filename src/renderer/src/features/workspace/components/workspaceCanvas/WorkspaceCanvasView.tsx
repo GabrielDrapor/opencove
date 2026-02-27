@@ -53,6 +53,12 @@ interface WorkspaceCanvasViewProps {
   onNodeContextMenu: (event: React.MouseEvent, node: Node<TerminalNodeData>) => void
   onSelectionContextMenu: (event: React.MouseEvent, selectedNodes: Node<TerminalNodeData>[]) => void
   onSelectionChange: (params: { nodes: Node<TerminalNodeData>[] }) => void
+  onNodeDragStart: (
+    event: React.MouseEvent,
+    node: Node<TerminalNodeData>,
+    nodes: Node<TerminalNodeData>[],
+  ) => void
+  onSelectionDragStart: (event: React.MouseEvent, nodes: Node<TerminalNodeData>[]) => void
   onNodeDragStop: (
     event: React.MouseEvent,
     node: Node<TerminalNodeData>,
@@ -168,6 +174,8 @@ export function WorkspaceCanvasView({
   onNodeContextMenu,
   onSelectionContextMenu,
   onSelectionChange,
+  onNodeDragStart,
+  onSelectionDragStart,
   onNodeDragStop,
   onSelectionDragStop,
   onMoveEnd,
@@ -259,6 +267,8 @@ export function WorkspaceCanvasView({
         onNodeContextMenu={onNodeContextMenu}
         onSelectionContextMenu={onSelectionContextMenu}
         onSelectionChange={onSelectionChange}
+        onNodeDragStart={onNodeDragStart}
+        onSelectionDragStart={onSelectionDragStart}
         onNodeDragStop={onNodeDragStop}
         onSelectionDragStop={onSelectionDragStop}
         onMoveEnd={onMoveEnd}

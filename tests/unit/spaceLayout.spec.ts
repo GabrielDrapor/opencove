@@ -133,4 +133,44 @@ describe('spaceLayout', () => {
     expect(spaceB?.rect.x).toBe(100 + gap)
     expect(spaceBNode?.rect.x).toBe(110 + (100 + gap - 90))
   })
+
+  it('reprocesses pinned groups when chain reactions push nodes into them', () => {
+    const gap = 24
+
+    const next = pushAwayLayout({
+      items: [
+        {
+          id: 'pinned-right',
+          kind: 'node',
+          groupId: 'pinned-right',
+          rect: { x: 300, y: 0, width: 100, height: 100 },
+        },
+        {
+          id: 'pinned-left',
+          kind: 'node',
+          groupId: 'pinned-left',
+          rect: { x: 0, y: 0, width: 100, height: 100 },
+        },
+        {
+          id: 'mover-a',
+          kind: 'node',
+          groupId: 'mover-a',
+          rect: { x: 80, y: 0, width: 100, height: 100 },
+        },
+        {
+          id: 'mover-b',
+          kind: 'node',
+          groupId: 'mover-b',
+          rect: { x: 200, y: 0, width: 100, height: 100 },
+        },
+      ],
+      pinnedGroupIds: ['pinned-right', 'pinned-left'],
+      sourceGroupIds: ['pinned-right', 'pinned-left'],
+      directions: ['x+'],
+      gap,
+    })
+
+    const moverB = next.find(item => item.id === 'mover-b')
+    expect(moverB?.rect.x).toBe(400 + gap)
+  })
 })

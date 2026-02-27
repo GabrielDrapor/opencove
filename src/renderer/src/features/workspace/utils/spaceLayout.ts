@@ -349,6 +349,21 @@ export function pushAwayLayout(_input: {
           queue.push(targetGroupId)
           inQueue.add(targetGroupId)
         }
+
+        for (const pinnedGroupId of pinned) {
+          if (!groupIndices.has(pinnedGroupId)) {
+            continue
+          }
+
+          if (!hasGroupIntersection(pinnedGroupId, targetGroupId)) {
+            continue
+          }
+
+          if (!inQueue.has(pinnedGroupId)) {
+            queue.push(pinnedGroupId)
+            inQueue.add(pinnedGroupId)
+          }
+        }
       }
     }
   }
