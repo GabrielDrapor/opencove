@@ -23,12 +23,48 @@ import {
 
 const execFileAsync = promisify(execFile)
 
-const MAC_PATH_OPENERS: Array<WorkspacePathOpener & { application?: string }> = [
+type MacWorkspacePathOpener = WorkspacePathOpener & {
+  applications?: readonly string[]
+}
+
+const MAC_PATH_OPENERS: readonly MacWorkspacePathOpener[] = [
+  { id: 'vscode', label: 'VS Code', applications: ['Visual Studio Code'] },
+  { id: 'cursor', label: 'Cursor', applications: ['Cursor'] },
+  { id: 'windsurf', label: 'Windsurf', applications: ['Windsurf'] },
+  { id: 'zed', label: 'Zed', applications: ['Zed'] },
+  { id: 'antigravity', label: 'Antigravity', applications: ['Antigravity'] },
+  {
+    id: 'vscode-insiders',
+    label: 'VS Code Insiders',
+    applications: ['Visual Studio Code - Insiders'],
+  },
+  { id: 'vscodium', label: 'VSCodium', applications: ['VSCodium'] },
+  {
+    id: 'intellij-idea',
+    label: 'IntelliJ IDEA',
+    applications: ['IntelliJ IDEA', 'IntelliJ IDEA CE'],
+  },
+  { id: 'fleet', label: 'Fleet', applications: ['Fleet'] },
+  { id: 'android-studio', label: 'Android Studio', applications: ['Android Studio'] },
+  { id: 'xcode', label: 'Xcode', applications: ['Xcode'] },
+  { id: 'pycharm', label: 'PyCharm', applications: ['PyCharm', 'PyCharm CE'] },
+  { id: 'webstorm', label: 'WebStorm', applications: ['WebStorm'] },
+  { id: 'goland', label: 'GoLand', applications: ['GoLand'] },
+  { id: 'clion', label: 'CLion', applications: ['CLion'] },
+  { id: 'phpstorm', label: 'PhpStorm', applications: ['PhpStorm'] },
+  { id: 'rubymine', label: 'RubyMine', applications: ['RubyMine'] },
+  { id: 'datagrip', label: 'DataGrip', applications: ['DataGrip'] },
+  { id: 'rider', label: 'Rider', applications: ['Rider'] },
+  { id: 'sublime-text', label: 'Sublime Text', applications: ['Sublime Text'] },
+  { id: 'nova', label: 'Nova', applications: ['Nova'] },
+  { id: 'bbedit', label: 'BBEdit', applications: ['BBEdit'] },
+  { id: 'textmate', label: 'TextMate', applications: ['TextMate'] },
+  { id: 'coteditor', label: 'CotEditor', applications: ['CotEditor'] },
   { id: 'finder', label: 'Finder' },
-  { id: 'cursor', label: 'Cursor', application: 'Cursor' },
-  { id: 'vscode', label: 'VS Code', application: 'Visual Studio Code' },
-  { id: 'windsurf', label: 'Windsurf', application: 'Windsurf' },
-  { id: 'zed', label: 'Zed', application: 'Zed' },
+  { id: 'terminal', label: 'Terminal', applications: ['Terminal'] },
+  { id: 'iterm', label: 'iTerm', applications: ['iTerm'] },
+  { id: 'warp', label: 'Warp', applications: ['Warp'] },
+  { id: 'ghostty', label: 'Ghostty', applications: ['Ghostty'] },
 ]
 
 async function isMacApplicationAvailable(application: string): Promise<boolean> {
@@ -40,6 +76,21 @@ async function isMacApplicationAvailable(application: string): Promise<boolean> 
   }
 }
 
+async function resolveMacApplication(candidate: MacWorkspacePathOpener): Promise<string | null> {
+  if (!candidate.applications || candidate.applications.length === 0) {
+    return null
+  }
+
+  const availability = await Promise.all(
+    candidate.applications.map(async application => ({
+      application,
+      available: await isMacApplicationAvailable(application),
+    })),
+  )
+
+  return availability.find(result => result.available)?.application ?? null
+}
+
 async function listAvailableWorkspacePathOpeners(): Promise<WorkspacePathOpener[]> {
   if (process.platform !== 'darwin') {
     return []
@@ -47,11 +98,11 @@ async function listAvailableWorkspacePathOpeners(): Promise<WorkspacePathOpener[
 
   const openerResults = await Promise.all(
     MAC_PATH_OPENERS.map(async candidate => {
-      if (!candidate.application) {
+      if (!candidate.applications) {
         return { id: candidate.id, label: candidate.label }
       }
 
-      return (await isMacApplicationAvailable(candidate.application))
+      return (await resolveMacApplication(candidate))
         ? { id: candidate.id, label: candidate.label }
         : null
     }),
@@ -75,11 +126,16 @@ async function openWorkspacePath(path: string, openerId: WorkspacePathOpenerId):
   }
 
   const opener = MAC_PATH_OPENERS.find(candidate => candidate.id === openerId) ?? null
-  if (!opener?.application) {
+  if (!opener?.applications) {
     throw new Error('Unsupported path opener')
   }
 
-  await execFileAsync('open', ['-a', opener.application, path])
+  const application = await resolveMacApplication(opener)
+  if (!application) {
+    throw new Error('Unsupported path opener')
+  }
+
+  await execFileAsync('open', ['-a', application, path])
 }
 
 export function registerWorkspaceIpcHandlers(

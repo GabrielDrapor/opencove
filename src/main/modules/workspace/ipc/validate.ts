@@ -1,10 +1,11 @@
-import type {
-  CopyWorkspacePathInput,
-  EnsureDirectoryInput,
-  OpenWorkspacePathInput,
-  WorkspacePathOpenerId,
-} from '../../../../shared/types/api'
 import { isAbsolute } from 'node:path'
+import {
+  WORKSPACE_PATH_OPENER_IDS,
+  type CopyWorkspacePathInput,
+  type EnsureDirectoryInput,
+  type OpenWorkspacePathInput,
+  type WorkspacePathOpenerId,
+} from '../../../../shared/types/api'
 
 function normalizePathValue(value: unknown, channel: string): string {
   const path = typeof value === 'string' ? value.trim() : ''
@@ -22,13 +23,10 @@ function normalizePathValue(value: unknown, channel: string): string {
 
 function normalizeWorkspacePathOpenerId(value: unknown): WorkspacePathOpenerId {
   if (
-    value === 'finder' ||
-    value === 'cursor' ||
-    value === 'vscode' ||
-    value === 'windsurf' ||
-    value === 'zed'
+    typeof value === 'string' &&
+    WORKSPACE_PATH_OPENER_IDS.includes(value as WorkspacePathOpenerId)
   ) {
-    return value
+    return value as WorkspacePathOpenerId
   }
 
   throw new Error('Invalid openerId for workspace:open-path')

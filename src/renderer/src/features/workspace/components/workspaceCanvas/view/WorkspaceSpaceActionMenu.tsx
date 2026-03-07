@@ -18,6 +18,32 @@ interface WorkspaceSpaceActionMenuProps {
 const MENU_WIDTH = 188
 const SUBMENU_WIDTH = 188
 const VIEWPORT_PADDING = 12
+const SUBMENU_CLOSE_DELAY_MS = 120
+
+function getWorkspacePathOpenerSortRank(openerId: WorkspacePathOpenerId): number {
+  if (openerId === 'finder') {
+    return 0
+  }
+
+  if (openerId === 'terminal') {
+    return 1
+  }
+
+  return 2
+}
+
+function sortWorkspacePathOpeners(openers: WorkspacePathOpener[]): WorkspacePathOpener[] {
+  return [...openers].sort((left, right) => {
+    const rankDifference =
+      getWorkspacePathOpenerSortRank(left.id) - getWorkspacePathOpenerSortRank(right.id)
+
+    if (rankDifference !== 0) {
+      return rankDifference
+    }
+
+    return left.label.localeCompare(right.label, undefined, { sensitivity: 'base' })
+  })
+}
 
 export function WorkspaceSpaceActionMenu({
   menu,
@@ -31,10 +57,39 @@ export function WorkspaceSpaceActionMenu({
   onOpenPath,
 }: WorkspaceSpaceActionMenuProps): React.JSX.Element | null {
   const [openSubmenu, setOpenSubmenu] = React.useState<'open' | null>(null)
+  const closeSubmenuTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sortedOpeners = React.useMemo(
+    () => sortWorkspacePathOpeners(availableOpeners),
+    [availableOpeners],
+  )
+
+  const cancelScheduledSubmenuClose = React.useCallback(() => {
+    if (closeSubmenuTimeoutRef.current === null) {
+      return
+    }
+
+    clearTimeout(closeSubmenuTimeoutRef.current)
+    closeSubmenuTimeoutRef.current = null
+  }, [])
+
+  const scheduleSubmenuClose = React.useCallback(() => {
+    cancelScheduledSubmenuClose()
+    closeSubmenuTimeoutRef.current = setTimeout(() => {
+      closeSubmenuTimeoutRef.current = null
+      setOpenSubmenu(null)
+    }, SUBMENU_CLOSE_DELAY_MS)
+  }, [cancelScheduledSubmenuClose])
 
   React.useEffect(() => {
+    cancelScheduledSubmenuClose()
     setOpenSubmenu(null)
-  }, [menu?.spaceId, menu?.x, menu?.y])
+  }, [cancelScheduledSubmenuClose, menu?.spaceId, menu?.x, menu?.y])
+
+  React.useEffect(() => {
+    return () => {
+      cancelScheduledSubmenuClose()
+    }
+  }, [cancelScheduledSubmenuClose])
 
   if (!menu) {
     return null
@@ -44,12 +99,10 @@ export function WorkspaceSpaceActionMenu({
   const viewportHeight = typeof window === 'undefined' ? 720 : window.innerHeight
   const menuLeft = Math.min(menu.x, viewportWidth - MENU_WIDTH - VIEWPORT_PADDING)
   const menuTop = Math.min(menu.y, viewportHeight - 120)
-  const shouldShowOpenSubmenu = openSubmenu === 'open' && availableOpeners.length > 0
+  const shouldShowOpenSubmenu = openSubmenu === 'open' && sortedOpeners.length > 0
   const submenuWouldOverflow =
     menuLeft + MENU_WIDTH + SUBMENU_WIDTH > viewportWidth - VIEWPORT_PADDING
-  const submenuLeft = submenuWouldOverflow
-    ? menuLeft - SUBMENU_WIDTH - 6
-    : menuLeft + MENU_WIDTH + 6
+  const submenuLeft = submenuWouldOverflow ? menuLeft - SUBMENU_WIDTH : menuLeft + MENU_WIDTH
   const submenuTop = menuTop
 
   return (
@@ -61,9 +114,8 @@ export function WorkspaceSpaceActionMenu({
         onClick={event => {
           event.stopPropagation()
         }}
-        onMouseLeave={() => {
-          setOpenSubmenu(null)
-        }}
+        onMouseEnter={cancelScheduledSubmenuClose}
+        onMouseLeave={scheduleSubmenuClose}
       >
         {canCreateWorktree ? (
           <button
@@ -104,17 +156,20 @@ export function WorkspaceSpaceActionMenu({
           <span className="workspace-context-menu__label">Copy Path</span>
         </button>
 
-        {availableOpeners.length > 0 ? (
+        {sortedOpeners.length > 0 ? (
           <button
             type="button"
             data-testid="workspace-space-action-open"
             onMouseEnter={() => {
+              cancelScheduledSubmenuClose()
               setOpenSubmenu('open')
             }}
             onFocus={() => {
+              cancelScheduledSubmenuClose()
               setOpenSubmenu('open')
             }}
             onClick={() => {
+              cancelScheduledSubmenuClose()
               setOpenSubmenu(previous => (previous === 'open' ? null : 'open'))
             }}
           >
@@ -137,13 +192,12 @@ export function WorkspaceSpaceActionMenu({
             event.stopPropagation()
           }}
           onMouseEnter={() => {
+            cancelScheduledSubmenuClose()
             setOpenSubmenu('open')
           }}
-          onMouseLeave={() => {
-            setOpenSubmenu(null)
-          }}
+          onMouseLeave={scheduleSubmenuClose}
         >
-          {availableOpeners.map(opener => (
+          {sortedOpeners.map(opener => (
             <button
               key={opener.id}
               type="button"
