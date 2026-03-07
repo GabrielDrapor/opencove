@@ -5,7 +5,7 @@ import type {
   ResizeTerminalInput,
   SnapshotTerminalInput,
   WriteTerminalInput,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 import type { SpawnPtyOptions } from '../../../infrastructure/pty/PtyManager'
 import { isAbsolute } from 'node:path'
 

@@ -1,4 +1,4 @@
-import type { AgentLaunchMode, AgentProviderId } from '../../../shared/types/api'
+import type { AgentLaunchMode, AgentProviderId } from '../../../shared/contracts/dto'
 
 interface BuildAgentLaunchCommandInput {
   provider: AgentProviderId

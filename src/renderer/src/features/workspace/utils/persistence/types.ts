@@ -2,4 +2,4 @@ export type {
   PersistWriteFailureReason,
   PersistWriteLevel,
   PersistWriteResult,
-} from '@shared/types/api'
+} from '@shared/contracts/dto'

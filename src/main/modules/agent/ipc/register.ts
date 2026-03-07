@@ -1,10 +1,10 @@
 import { ipcMain } from 'electron'
-import { IPC_CHANNELS } from '../../../../shared/constants/ipc'
+import { IPC_CHANNELS } from '../../../../shared/contracts/ipc'
 import type {
   LaunchAgentInput,
   LaunchAgentResult,
   ListAgentModelsInput,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 import type { IpcRegistrationDisposable } from '../../../ipc/types'
 import { buildAgentLaunchCommand } from '../../../infrastructure/agent/AgentCommandFactory'
 import {

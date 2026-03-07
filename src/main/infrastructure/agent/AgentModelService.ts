@@ -3,7 +3,7 @@ import type {
   AgentModelOption,
   AgentProviderId,
   ListAgentModelsResult,
-} from '../../../shared/types/api'
+} from '../../../shared/contracts/dto'
 
 const CODEX_APP_SERVER_TIMEOUT_MS = 8000
 const CODEX_APP_SERVER_SHUTDOWN_GRACE_MS = 500

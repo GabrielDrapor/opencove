@@ -1,7 +1,7 @@
 import { execFile, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import { shell } from 'electron'
-import type { WorkspacePathOpener, WorkspacePathOpenerId } from '../../../../shared/types/api'
+import type { WorkspacePathOpener, WorkspacePathOpenerId } from '../../../../shared/contracts/dto'
 
 const execFileAsync = promisify(execFile)
 

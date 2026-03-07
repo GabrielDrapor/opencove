@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type MutableRefObject } from 'react'
 import type { Node } from '@xyflow/react'
-import type { WorkspacePathOpener, WorkspacePathOpenerId } from '@shared/types/api'
+import type { WorkspacePathOpener, WorkspacePathOpenerId } from '@shared/contracts/dto'
 import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import type {
   ContextMenuState,

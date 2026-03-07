@@ -5,7 +5,7 @@ import {
   type EnsureDirectoryInput,
   type OpenWorkspacePathInput,
   type WorkspacePathOpenerId,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 
 function normalizePathValue(value: unknown, channel: string): string {
   const path = typeof value === 'string' ? value.trim() : ''

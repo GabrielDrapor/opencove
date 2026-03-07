@@ -1,13 +1,13 @@
 import { webContents } from 'electron'
 import type { IPty } from 'node-pty'
-import { IPC_CHANNELS } from '../../../../shared/constants/ipc'
+import { IPC_CHANNELS } from '../../../../shared/contracts/ipc'
 import type {
   AgentProviderId,
   TerminalDataEvent,
   TerminalExitEvent,
   TerminalSessionMetadataEvent,
   TerminalSessionStateEvent,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 import { locateAgentResumeSessionId } from '../../../infrastructure/agent/AgentSessionLocator'
 import { PtyManager, type SpawnPtyOptions } from '../../../infrastructure/pty/PtyManager'
 import { resolveSessionFilePath } from '../../../infrastructure/session/SessionFileResolver'

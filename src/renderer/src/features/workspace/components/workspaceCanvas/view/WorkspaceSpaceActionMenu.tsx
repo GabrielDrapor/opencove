@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronRight, Copy, FolderOpen, GitBranchPlus, Package } from 'lucide-react'
-import type { WorkspacePathOpener, WorkspacePathOpenerId } from '@shared/types/api'
+import type { WorkspacePathOpener, WorkspacePathOpenerId } from '@shared/contracts/dto'
 import type { SpaceActionMenuState } from '../types'
 
 interface WorkspaceSpaceActionMenuProps {

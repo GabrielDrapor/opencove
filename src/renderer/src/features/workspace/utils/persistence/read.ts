@@ -2,7 +2,7 @@ import { normalizeAgentSettings } from '../../../settings/agentConfig'
 import type { PersistedAppState, PersistedWorkspaceState } from '../../types'
 import { ensurePersistedWorkspace } from './ensure'
 import { getPersistencePort, readLegacyLocalStorageRaw } from './port'
-import type { PersistenceRecoveryReason } from '@shared/types/api'
+import type { PersistenceRecoveryReason } from '@shared/contracts/dto'
 
 function parsePersistedStateValue(value: unknown): PersistedAppState | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {

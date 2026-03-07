@@ -1,6 +1,6 @@
 import React from 'react'
 import { ViewportPortal } from '@xyflow/react'
-import type { GitWorktreeInfo } from '@shared/types/api'
+import type { GitWorktreeInfo } from '@shared/contracts/dto'
 import type { WorkspaceSpaceRect } from '../../../types'
 import type { SpaceVisual } from '../types'
 import { toErrorMessage } from '../helpers'

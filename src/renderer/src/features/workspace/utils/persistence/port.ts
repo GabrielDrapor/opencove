@@ -1,4 +1,4 @@
-import type { PersistWriteResult, ReadAppStateResult } from '@shared/types/api'
+import type { PersistWriteResult, ReadAppStateResult } from '@shared/contracts/dto'
 import { STORAGE_KEY } from './constants'
 import { getStorage, isQuotaExceededError } from './storage'
 

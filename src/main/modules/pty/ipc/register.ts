@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { IPC_CHANNELS } from '../../../../shared/constants/ipc'
+import { IPC_CHANNELS } from '../../../../shared/contracts/ipc'
 import type {
   AttachTerminalInput,
   DetachTerminalInput,
@@ -9,7 +9,7 @@ import type {
   SnapshotTerminalResult,
   SpawnTerminalInput,
   WriteTerminalInput,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 import type { IpcRegistrationDisposable } from '../../../ipc/types'
 import type { PtyRuntime } from './runtime'
 import type { ApprovedWorkspaceStore } from '../../workspace/ApprovedWorkspaceStore'

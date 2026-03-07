@@ -1,4 +1,4 @@
-import type { AgentProviderId, TerminalSessionState } from '../../../shared/types/api'
+import type { AgentProviderId, TerminalSessionState } from '../../../shared/contracts/dto'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object'

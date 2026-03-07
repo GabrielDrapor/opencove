@@ -1,14 +1,14 @@
 import { mkdir } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { clipboard, dialog, ipcMain } from 'electron'
-import { IPC_CHANNELS } from '../../../../shared/constants/ipc'
+import { IPC_CHANNELS } from '../../../../shared/contracts/ipc'
 import type {
   CopyWorkspacePathInput,
   EnsureDirectoryInput,
   ListWorkspacePathOpenersResult,
   OpenWorkspacePathInput,
   WorkspaceDirectory,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 import type { IpcRegistrationDisposable } from '../../../ipc/types'
 import type { ApprovedWorkspaceStore } from '../ApprovedWorkspaceStore'
 import {

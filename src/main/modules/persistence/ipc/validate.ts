@@ -3,7 +3,7 @@ import type {
   WriteAppStateInput,
   WriteNodeScrollbackInput,
   WriteWorkspaceStateRawInput,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 
 const DEFAULT_MAX_RAW_BYTES = 50 * 1024 * 1024
 

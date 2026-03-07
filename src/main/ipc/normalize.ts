@@ -1,4 +1,4 @@
-import type { AgentProviderId } from '../../shared/types/api'
+import type { AgentProviderId } from '../../shared/contracts/dto'
 
 export function normalizeProvider(value: unknown): AgentProviderId {
   if (value !== 'claude-code' && value !== 'codex') {

@@ -6,7 +6,7 @@ import type {
   SuggestTaskTitleInput,
   SuggestTaskTitleResult,
   TaskPriority,
-} from '../../../shared/types/api'
+} from '../../../shared/contracts/dto'
 import { buildTaskTitleCommand } from './TaskTitleCommandFactory'
 
 const TASK_TITLE_TIMEOUT_MS = 30_000

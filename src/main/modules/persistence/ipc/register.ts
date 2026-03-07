@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
-import { IPC_CHANNELS } from '../../../../shared/constants/ipc'
-import type { PersistWriteResult, ReadAppStateResult } from '../../../../shared/types/api'
+import { IPC_CHANNELS } from '../../../../shared/contracts/ipc'
+import type { PersistWriteResult, ReadAppStateResult } from '../../../../shared/contracts/dto'
 import type { IpcRegistrationDisposable } from '../../../ipc/types'
 import type { PersistenceStore } from '../PersistenceStore'
 import {

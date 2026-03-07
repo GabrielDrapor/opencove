@@ -1,4 +1,4 @@
-import type { SuggestTaskTitleInput } from '../../../../shared/types/api'
+import type { SuggestTaskTitleInput } from '../../../../shared/contracts/dto'
 import { normalizeProvider, normalizeStringArray } from '../../../ipc/normalize'
 import { isAbsolute } from 'node:path'
 

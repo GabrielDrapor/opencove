@@ -1,4 +1,4 @@
-import type { AgentProviderId } from '../../../shared/types/api'
+import type { AgentProviderId } from '../../../shared/contracts/dto'
 
 interface BuildTaskTitleCommandInput {
   provider: AgentProviderId

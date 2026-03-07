@@ -2,7 +2,7 @@ import type {
   AgentProviderId,
   LaunchAgentInput,
   ListAgentModelsInput,
-} from '../../../../shared/types/api'
+} from '../../../../shared/contracts/dto'
 import { normalizeProvider } from '../../../ipc/normalize'
 import { isAbsolute } from 'node:path'
 

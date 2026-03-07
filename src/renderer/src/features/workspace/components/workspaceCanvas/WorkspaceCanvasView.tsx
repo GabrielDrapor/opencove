@@ -12,7 +12,7 @@ import {
   type NodeTypes,
   type Viewport,
 } from '@xyflow/react'
-import type { WorkspacePathOpener, WorkspacePathOpenerId } from '@shared/types/api'
+import type { WorkspacePathOpener, WorkspacePathOpenerId } from '@shared/contracts/dto'
 import type { TerminalNodeData, WorkspaceSpaceRect, WorkspaceSpaceState } from '../../types'
 import { MAX_CANVAS_ZOOM, MIN_CANVAS_ZOOM } from './constants'
 import type {
