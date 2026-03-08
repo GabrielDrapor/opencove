@@ -19,6 +19,12 @@ import {
   TASK_PRIORITY_LABEL,
 } from './taskNode/helpers'
 
+interface TaskNodeInteractionOptions {
+  normalizeViewport?: boolean
+  selectNode?: boolean
+  shiftKey?: boolean
+}
+
 interface TaskNodeProps {
   title: string
   requirement: string
@@ -47,7 +53,7 @@ interface TaskNodeProps {
   onStatusChange: (status: TaskRuntimeStatus) => void
   onResumeAgentSession: (recordId: string) => void
   onRemoveAgentSessionRecord: (recordId: string) => void
-  onInteractionStart?: () => void
+  onInteractionStart?: (options?: TaskNodeInteractionOptions) => void
 }
 
 type ResizeAxis = 'horizontal' | 'vertical'
@@ -225,12 +231,27 @@ export function TaskNode({
     <div
       className={`task-node nowheel${isEnriching ? ' task-node--enriching' : ''}`}
       style={style}
-      onMouseDownCapture={event => {
-        if (event.button !== 0) {
+      onClickCapture={event => {
+        if (event.button !== 0 || !(event.target instanceof Element)) {
           return
         }
 
-        onInteractionStart?.()
+        if (event.target.closest('.task-node__title-input, .task-node__requirement-input')) {
+          event.stopPropagation()
+          onInteractionStart?.({
+            normalizeViewport: true,
+            selectNode: false,
+            shiftKey: event.shiftKey,
+          })
+          return
+        }
+
+        if (event.target.closest('.nodrag, button, input, textarea, select, a')) {
+          return
+        }
+
+        event.stopPropagation()
+        onInteractionStart?.({ shiftKey: event.shiftKey })
       }}
       onWheel={event => {
         if (shouldStopWheelPropagation(event.currentTarget)) {
@@ -262,6 +283,9 @@ export function TaskNode({
               setIsTitleEditing(true)
             }}
             onPointerDown={event => {
+              event.stopPropagation()
+            }}
+            onClick={event => {
               event.stopPropagation()
             }}
             onChange={event => {
@@ -351,6 +375,9 @@ export function TaskNode({
               setIsRequirementEditing(true)
             }}
             onPointerDown={event => {
+              event.stopPropagation()
+            }}
+            onClick={event => {
               event.stopPropagation()
             }}
             onChange={event => {

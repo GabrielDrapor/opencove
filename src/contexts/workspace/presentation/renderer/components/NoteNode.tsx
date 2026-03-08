@@ -3,6 +3,12 @@ import type { JSX, PointerEvent as ReactPointerEvent } from 'react'
 import type { Size } from '../types'
 import { shouldStopWheelPropagation } from './taskNode/helpers'
 
+interface NoteNodeInteractionOptions {
+  normalizeViewport?: boolean
+  selectNode?: boolean
+  shiftKey?: boolean
+}
+
 interface NoteNodeProps {
   text: string
   width: number
@@ -10,7 +16,7 @@ interface NoteNodeProps {
   onClose: () => void
   onResize: (size: Size) => void
   onTextChange: (text: string) => void
-  onInteractionStart?: () => void
+  onInteractionStart?: (options?: NoteNodeInteractionOptions) => void
 }
 
 type ResizeAxis = 'horizontal' | 'vertical'
@@ -118,12 +124,27 @@ export function NoteNode({
     <div
       className="note-node nowheel"
       style={style}
-      onMouseDownCapture={event => {
-        if (event.button !== 0) {
+      onClickCapture={event => {
+        if (event.button !== 0 || !(event.target instanceof Element)) {
           return
         }
 
-        onInteractionStart?.()
+        if (event.target.closest('.note-node__textarea')) {
+          event.stopPropagation()
+          onInteractionStart?.({
+            normalizeViewport: true,
+            selectNode: false,
+            shiftKey: event.shiftKey,
+          })
+          return
+        }
+
+        if (event.target.closest('.nodrag')) {
+          return
+        }
+
+        event.stopPropagation()
+        onInteractionStart?.({ shiftKey: event.shiftKey })
       }}
       onWheel={event => {
         if (shouldStopWheelPropagation(event.currentTarget)) {
@@ -154,6 +175,9 @@ export function NoteNode({
         data-testid="note-node-textarea"
         value={text}
         onPointerDown={event => {
+          event.stopPropagation()
+        }}
+        onClick={event => {
           event.stopPropagation()
         }}
         onChange={event => {

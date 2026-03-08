@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import type { JSX } from 'react'
+import React, { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { SerializeAddon } from '@xterm/addon-serialize'
 import { Terminal } from '@xterm/xterm'
@@ -19,6 +18,7 @@ import {
 } from './terminalNode/screenStateCache'
 import { TerminalNodeHeader } from './terminalNode/TerminalNodeHeader'
 import { resolveSuffixPrefixOverlap } from './terminalNode/overlap'
+import { resolveTerminalNodeInteraction } from './terminalNode/interaction'
 import { useTerminalResize } from './terminalNode/useTerminalResize'
 import { useTerminalScrollback } from './terminalNode/useScrollback'
 import { shouldStopWheelPropagation } from './terminalNode/wheel'
@@ -435,24 +435,21 @@ export function TerminalNode({
     <div
       className="terminal-node nowheel"
       style={sizeStyle}
-      onMouseDownCapture={event => {
+      onClickCapture={event => {
         if (event.button !== 0) {
           return
         }
 
-        if (!(event.target instanceof Element)) {
+        const interaction = resolveTerminalNodeInteraction(event.target)
+        if (!interaction) {
           return
         }
 
-        const shouldNormalizeViewport = Boolean(event.target.closest('.terminal-node__terminal'))
-        const shouldSelectNode =
-          shouldNormalizeViewport || Boolean(event.target.closest('.terminal-node__header'))
-
-        if (!shouldSelectNode) {
-          return
-        }
-
-        onInteractionStart?.({ normalizeViewport: shouldNormalizeViewport })
+        event.stopPropagation()
+        onInteractionStart?.({
+          normalizeViewport: interaction.normalizeViewport,
+          shiftKey: event.shiftKey,
+        })
       }}
       onWheel={event => {
         if (shouldStopWheelPropagation(event.currentTarget)) {

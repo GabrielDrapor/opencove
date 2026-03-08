@@ -27,7 +27,7 @@ function TerminalNodeType({
   data: TerminalNodeData
   id: string
   terminalFontSize: number
-  selectNode: (nodeId: string) => void
+  selectNode: (nodeId: string, options?: { toggle?: boolean }) => void
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNodeScrollbackRef: MutableRefObject<UpdateNodeScrollback>
@@ -87,7 +87,13 @@ function TerminalNodeType({
           : undefined
       }
       onInteractionStart={options => {
+        if (options?.shiftKey === true) {
+          selectNode(id, { toggle: true })
+          return
+        }
+
         selectNode(id)
+
         if (options?.normalizeViewport === false) {
           return
         }
@@ -108,7 +114,7 @@ function NoteNodeType({
 }: {
   data: TerminalNodeData
   id: string
-  selectNode: (nodeId: string) => void
+  selectNode: (nodeId: string, options?: { toggle?: boolean }) => void
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNoteTextRef: MutableRefObject<(nodeId: string, text: string) => void>
@@ -129,8 +135,21 @@ function NoteNodeType({
       onTextChange={text => {
         updateNoteTextRef.current(id, text)
       }}
-      onInteractionStart={() => {
-        selectNode(id)
+      onInteractionStart={options => {
+        if (options?.selectNode !== false) {
+          if (options?.shiftKey === true) {
+            selectNode(id, { toggle: true })
+            return
+          }
+
+          selectNode(id)
+        }
+
+        if (options?.normalizeViewport === false) {
+          return
+        }
+
+        normalizeViewportForTerminalInteractionRef.current(id)
       }}
     />
   )
@@ -141,7 +160,7 @@ interface WorkspaceCanvasNodeTypesParams {
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   workspacePath: string
   terminalFontSize: number
-  selectNode: (nodeId: string) => void
+  selectNode: (nodeId: string, options?: { toggle?: boolean }) => void
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNoteTextRef: MutableRefObject<(nodeId: string, text: string) => void>
@@ -287,8 +306,21 @@ export function useWorkspaceCanvasNodeTypes({
             onRemoveAgentSessionRecord={recordId => {
               removeTaskAgentSessionRecordRef.current(id, recordId)
             }}
-            onInteractionStart={() => {
-              selectNode(id)
+            onInteractionStart={options => {
+              if (options?.selectNode !== false) {
+                if (options?.shiftKey === true) {
+                  selectNode(id, { toggle: true })
+                  return
+                }
+
+                selectNode(id)
+              }
+
+              if (options?.normalizeViewport === false) {
+                return
+              }
+
+              normalizeViewportForTerminalInteractionRef.current(id)
             }}
           />
         )

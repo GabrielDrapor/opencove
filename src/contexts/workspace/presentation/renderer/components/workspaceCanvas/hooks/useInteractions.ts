@@ -9,10 +9,17 @@ import type {
 } from '../types'
 import { focusNodeInViewport } from '../helpers'
 import { useWorkspaceCanvasSelectionDraft } from './useSelectionDraft'
+import { useWorkspaceCanvasSelectNode } from './useSelectNode'
 import {
   assignNodeToSpaceAndExpand,
   findContainingSpaceByAnchor,
 } from './useInteractions.spaceAssignment'
+import { handleSelectionRectNodeToggle } from './useInteractions.selectionRectToggle'
+import {
+  isCanvasDoubleClickCreateTarget,
+  isPanePointerDragStartTarget,
+  shouldFocusNodeFromClickTarget,
+} from './useInteractions.eventTargets'
 
 type SetNodes = (
   updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
@@ -88,26 +95,13 @@ export function useWorkspaceCanvasInteractions({
   createTerminalNode: () => Promise<void>
 } {
   const reactFlowStore = useStoreApi()
-
-  const shouldFocusNodeFromClickTarget = useCallback((target: EventTarget | null): boolean => {
-    if (!(target instanceof Element)) {
-      return true
-    }
-
-    if (target.closest('[data-node-drag-handle=true]')) {
-      return false
-    }
-
-    if (target.closest('.terminal-node__terminal')) {
-      return false
-    }
-
-    if (target.closest('button')) {
-      return false
-    }
-
-    return true
-  }, [])
+  const selectNode = useWorkspaceCanvasSelectNode({
+    setNodes,
+    setSelectedNodeIds,
+    setSelectedSpaceIds,
+    selectedNodeIdsRef,
+    selectedSpaceIdsRef,
+  })
 
   const clearNodeSelection = useCallback(() => {
     setNodes(
@@ -170,7 +164,7 @@ export function useWorkspaceCanvasInteractions({
 
       focusNodeInViewport(reactFlow, node, { duration: 120, zoom: 1 })
     },
-    [normalizeZoomOnNodeClick, reactFlow, shouldFocusNodeFromClickTarget],
+    [normalizeZoomOnNodeClick, reactFlow],
   )
 
   const handleNodeContextMenu = useCallback(
@@ -253,18 +247,35 @@ export function useWorkspaceCanvasInteractions({
 
   const ignoreNextPaneClickRef = useRef(false)
 
+  const queueIgnoreNextPaneClick = useCallback(() => {
+    ignoreNextPaneClickRef.current = true
+    window.setTimeout(() => {
+      ignoreNextPaneClickRef.current = false
+    }, 0)
+  }, [])
+
   const handleCanvasPointerDownCaptureWithDragGuard = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (
+        handleSelectionRectNodeToggle({
+          event,
+          reactFlow,
+          toggleNode: nodeId => {
+            selectNode(nodeId, { toggle: true })
+          },
+          queueIgnoreNextPaneClick,
+        })
+      ) {
+        paneDragRef.current = null
+        return
+      }
+
       if (
         event.button === 0 &&
         !isTrackpadCanvasMode &&
         !event.shiftKey &&
         !isShiftPressedRef.current &&
-        event.target instanceof Element &&
-        !event.target.closest('.react-flow__node') &&
-        (event.target.closest('.react-flow__pane') ||
-          event.target.closest('.react-flow__renderer') ||
-          event.target.closest('.react-flow__background'))
+        isPanePointerDragStartTarget(event.target)
       ) {
         paneDragRef.current = {
           startX: event.clientX,
@@ -277,7 +288,14 @@ export function useWorkspaceCanvasInteractions({
 
       handleCanvasPointerDownCapture(event)
     },
-    [handleCanvasPointerDownCapture, isShiftPressedRef, isTrackpadCanvasMode],
+    [
+      handleCanvasPointerDownCapture,
+      isShiftPressedRef,
+      isTrackpadCanvasMode,
+      queueIgnoreNextPaneClick,
+      reactFlow,
+      selectNode,
+    ],
   )
 
   const handleCanvasPointerMoveCaptureWithDragGuard = useCallback(
@@ -308,13 +326,10 @@ export function useWorkspaceCanvasInteractions({
       const didCommitSelectionDraft = handleCanvasPointerUpCapture(event)
 
       if (draft?.didMove || didCommitSelectionDraft) {
-        ignoreNextPaneClickRef.current = true
-        window.setTimeout(() => {
-          ignoreNextPaneClickRef.current = false
-        }, 0)
+        queueIgnoreNextPaneClick()
       }
     },
-    [handleCanvasPointerUpCapture, selectionDraftRef],
+    [handleCanvasPointerUpCapture, queueIgnoreNextPaneClick, selectionDraftRef],
   )
 
   const handleCanvasDoubleClickCapture = useCallback(
@@ -323,27 +338,7 @@ export function useWorkspaceCanvasInteractions({
         return
       }
 
-      if (!(event.target instanceof Element)) {
-        return
-      }
-
-      const isFlowClickTarget =
-        event.target.closest('.react-flow__pane') ||
-        event.target.closest('.react-flow__renderer') ||
-        event.target.closest('.react-flow__background')
-      if (!isFlowClickTarget) {
-        return
-      }
-
-      if (
-        event.target.closest('.react-flow__node') ||
-        event.target.closest('.react-flow__panel') ||
-        event.target.closest('.react-flow__minimap') ||
-        event.target.closest('.react-flow__controls') ||
-        event.target.closest('.workspace-space-region__label-group') ||
-        event.target.closest('.workspace-space-region__drag-handle') ||
-        event.target.closest('button, input, textarea, select, a')
-      ) {
+      if (!isCanvasDoubleClickCreateTarget(event.target)) {
         return
       }
 

@@ -131,8 +131,11 @@ function WorkspaceCanvasInner({
       nodesRef,
       spacesRef,
       selectedNodeIdsRef,
+      selectedSpaceIdsRef,
       setNodes,
       onSpacesChange,
+      setSelectedNodeIds,
+      setSelectedSpaceIds,
       onRequestPersistFlush,
       setContextMenu,
       cancelSpaceRename,
@@ -235,6 +238,7 @@ function WorkspaceCanvasInner({
     return agentSettings.canvasInputMode
   }, [agentSettings.canvasInputMode, detectedCanvasInputMode])
   const isTrackpadCanvasMode = resolvedCanvasInputMode === 'trackpad'
+  const useManualCanvasWheelGestures = agentSettings.canvasInputMode !== 'mouse'
   const { handleCanvasWheelCapture } = workspaceCanvasHooks.useWorkspaceCanvasTrackpadGestures({
     canvasInputModeSetting: agentSettings.canvasInputMode,
     resolvedCanvasInputMode,
@@ -342,7 +346,6 @@ function WorkspaceCanvasInner({
     normalizePosition,
     applyPendingScrollbacks,
     isNodeDraggingRef,
-    selectionDraftRef,
     spacesRef,
     selectedSpaceIdsRef,
     dragSelectedSpaceIdsRef,
@@ -416,6 +419,7 @@ function WorkspaceCanvasInner({
       onMoveEnd={handleViewportMoveEnd}
       viewport={viewport}
       isTrackpadCanvasMode={isTrackpadCanvasMode}
+      useManualCanvasWheelGestures={useManualCanvasWheelGestures}
       isShiftPressed={isShiftPressed}
       selectionDraft={selectionDraftUi}
       spaceVisuals={spaceVisuals}

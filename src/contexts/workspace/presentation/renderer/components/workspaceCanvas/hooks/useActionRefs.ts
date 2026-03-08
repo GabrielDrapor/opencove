@@ -153,7 +153,7 @@ export function useWorkspaceCanvasSyncActionRefs({
       }
 
       const targetNode = nodesRef.current.find(node => node.id === nodeId)
-      if (!targetNode || targetNode.data.kind === 'task' || targetNode.data.kind === 'note') {
+      if (!targetNode) {
         return
       }
 

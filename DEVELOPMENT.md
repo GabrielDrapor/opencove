@@ -4,8 +4,9 @@
 
 ## 如何使用（给 Agent / 开发者）
 
-1.  **每次任务先读本文件**：获取全局硬规则、文档地图与常用入口。
-2.  **需要更深细节时**：参考 `AGENTS.md` 或 `docs/` 内的专题文档。
+1.  **每次任务先读本文件**：获取全局硬规则、文档地图、执行方法与常用入口。
+2.  **职责分层**：`AGENTS.md` 只保留关键指令、决策门槛与非协商项；具体方法、步骤和例子优先写在本文件或 `docs/` 专项文档。
+3.  **需要专题细节时**：按文档地图继续打开对应 `docs/` 文档。
 
 ## 开发与测试指南
 
@@ -24,7 +25,8 @@
     - `L`：只有存在真实子类型替换时才考虑；不要为了“像 OO”强造继承层级。
     - `I`：`preload / service / bridge` 接口要小而专用，不暴露大而全 API。
     - `D`：高层依赖抽象端口和类型，不直接依赖 `Electron / PTY / CLI` 细节。
-7.  **Renderer 反馈统一用应用内消息，不用系统弹窗 (Use In-App Feedback, Not System Dialogs)**: Renderer 层禁止新增 `window.alert / confirm / prompt` 这类系统弹窗；统一复用应用内反馈组件，并按语义区分 `info / warning / error` 三个视觉层级，避免阻塞交互与平台观感割裂。
+7.  **结构优先于补丁 (Prefer Structural Clarity over Patch Accumulation)**: 不要等问题复发后才升级。只要任务本身已经暴露出 `多个 mutable state owner`、`边界/权限含混`、`同一入口承载多套竞争语义或解释路径`、或 `局部修补会制造隐藏/矛盾状态`，就应先收敛结构而不是继续叠 patch。
+8.  **Renderer 反馈统一用应用内消息，不用系统弹窗 (Use In-App Feedback, Not System Dialogs)**: Renderer 层禁止新增 `window.alert / confirm / prompt` 这类系统弹窗；统一复用应用内反馈组件，并按语义区分 `info / warning / error` 三个视觉层级，避免阻塞交互与平台观感割裂。
 
 ### 架构执行触发器 (Architecture Execution Triggers)
 
@@ -36,25 +38,72 @@
     - 同一函数同时包含 `状态判定 + 外部调用 + fallback/retry + 写回`。
     - 同一次改动同时触及 `lifecycle / persistence / hydration / resume / watcher` 中两项及以上。
 3.  **高风险路径先写不变量**：启动、恢复、关闭、重试、fallback、异步乱序相关改动，先写 `1-3` 条 invariant，再决定实现位置与测试层级。
+4.  **结构性风险先升级判断**：以下信号任中其一，就必须按 Large Change 处理，而不是直接以最小改动修补：`多个 mutable state owner`、`边界或 authority 难以解释`、`同一入口/输入/观测承载多套竞争语义或状态迁移`、`局部 patch 可能制造新的矛盾状态或隐藏状态`、`同一真相被 runtime observation 与 durable state 同时改写`。是否“已经复发”只作为额外证据，不作为触发前提。
 
 ### 高风险问题预防策略（只列最容易漏的）
 
+以下内容是前文原则的落地建模方式；正式检查项统一见后文“风险与合规检查”，这里不重复展开检查清单。
+
 1.  **先写状态/所有权表，再写流程**：对跨 `Main / Preload / Renderer / PTY / persistence / external CLI` 的改动，先明确四列：`state`、`owner`、`write entry`、`restart source of truth`。若同一真相存在多个写入口，默认高风险。
-2.  **严格区分四类状态**：
-    - `用户意图`：用户明确要求的结果（如 stop、resume、close、archive）。
-    - `持久化事实`：重启/恢复逻辑依赖的 durable source of truth。
-    - `运行时观测`：进程、watcher、IPC、fallback 当前上报了什么。
-    - `UI 派生展示`：仅用于显示的即时状态。
-    - 规则：短暂的运行时观测不得直接覆盖恢复所依赖的持久化事实，除非有明确业务规则和回归测试。
+2.  **严格区分四类状态**：建模时至少先区分 `用户意图 / 持久化事实 / 运行时观测 / UI 派生展示` 四类状态；owner、恢复语义与写回约束按后文“风险与合规检查”执行。
 3.  **优先验证不变量，不堆场景**：每个高风险改动至少先写出 1-3 条不变量。测试优先证明“哪些错误不会发生”，而不是只证明 happy path 能跑通。
 4.  **默认过一遍故障模型**：重点考虑 `await` 中途关闭窗口/退出 app、事件重复/乱序/延迟、fallback 或 cleanup 比 happy path 更早写状态、部分成功/部分失败、旧数据恢复，以及跨平台路径/shell/权限差异。
 5.  **测试按风险层分配，不按文件平均分配**：
     - `Unit`：状态迁移、normalize、纯逻辑不变量。
     - `Contract`：IPC payload、跨层边界、输入校验。
     - `Integration`：hydration、persistence、restart、lifecycle、watcher 协作。
-    - `E2E`：只覆盖关键用户路径，不替代前三级。
-    - 触及 `lifecycle / persistence / IPC / external session watcher / async concurrency` 的 PR，至少要有一条跨边界回归测试。
-6.  **每个真实 bug 都要资产化**：至少沉淀为以下之一：回归测试、运行时断言、文档规则、抽象收敛。同类 bug 第二次出现时，优先升维修模型/抽象，不再只补局部 patch。
+    - `E2E`：关键用户路径与真实交互链路。
+    - UI 手段选择、Playwright、截图 / 录屏等细节，统一见后文“UI 自动化与验证”。
+6.  **结构分析先于实现**：凡命中结构性风险信号，实现前至少产出一份最小分析：`mutable state owner 表`、`边界/路由图（按场景可对应事件、消息、watcher、lifecycle）`、`1-3` 条 invariants，以及 `局部 patch vs 抽象收敛` 的 trade-off 说明。缺少这些信息时，不进入编码。
+7.  **边界驱动系统先识别 source / route / owner**：涉及事件、消息、watcher、回调、lifecycle 或其他边界驱动系统的冲突时，先明确 `谁发出`、`谁路由`、`谁拥有默认行为`、`谁拥有状态写权`。任何需要靠隐式副作用才能维持正确性的实现，都默认视为结构问题。
+8.  **每个真实 bug 都要资产化**：至少沉淀为以下之一：回归测试、运行时断言、文档规则、抽象收敛。若在分析阶段已经能看出同一结构弱点会导出多个相邻故障模式，就必须直接升级为系统性治理任务，目标是合并 owner、消除重复写入口或收敛交互抽象，而不是等待再次复发。
+
+### 通用参考学习与方案生成法（Research -> Synthesize -> Adapt -> Verify）
+
+凡是行业内大概率已有成熟做法、主流产品 / 框架 / 库已有先例、或问题明显不是 Cove 独有时，都应主动查找外部参考，再结合本仓约束提出方案，而不是等用户点名要求后才去看。
+
+1.  **先识别问题类，不先写实现**：先写一句 `这是哪一类已有行业先例的问题`，再写一句 `Cove 当前真正不稳定 / 不清晰的承诺是什么`。
+2.  **按四层查参考**：
+    - `产品 / 帮助文档 / 规范`：确认外部世界对该问题类承诺的稳定行为。
+    - `官方示例 / 源码 / 测试 / RFC`：确认默认策略、owner、边界和 fallback。
+    - `issue / discussion / changelog / maintainer comment`：确认 trade-off、平台差异和已知坑。
+    - `本仓现有实现`：确认哪些抽象可以复用，避免平行再造。
+3.  **每个参考只提炼五类信息**：`承诺`、`state / authority owner`、`1-3 invariants`、`fallback / override`、`trade-off / 不直接照搬的部分`。
+4.  **提出方案时必须做转译**：按 `行业共识 -> 可迁移原则 -> Cove 约束 -> 本地设计` 输出，不直接把外部实现贴进来。
+5.  **自动化 / 启发式默认保守**：涉及 `auto-detect / auto-switch / auto-retry / auto-recover / heuristic` 时，高置信才切换，歧义保持稳定，并保留显式兜底。
+6.  **验证仍遵循本文件前文的按风险分层原则**：重点把从外部参考提炼出的规则、不变量和 trade-off 落到最低 meaningful layer；UI 侧手段选择统一见后文“UI 自动化与验证”。
+7.  **最后资产化**：把结论沉淀到 `专项文档 + 测试 + owner / invariant 说明 + review 要点`；否则视为未完成学习闭环。
+
+### 风险与合规检查（Risk & Compliance System）
+
+本节是前文状态、边界、owner 与恢复语义原则的正式检查清单。对 **Large Change** 或任何命中运行时高风险的改动，在进入实现前至少显式过一遍以下检查项：
+
+#### 关键稳定性检查（Critical Stability Checklist）
+
+- **Async Gap Safety**：所有 `await` 边界都要考虑组件卸载、窗口关闭、app 退出、对象失效后的行为。
+- **Concurrency & Race**：防止快速连续输入、重复事件、异步乱序、重复回调带来的竞争与边界漂移。
+- **State Ownership**：对持久化、恢复、同步或跨层传播的状态，必须明确唯一 authoritative owner，避免多层抢写同一真相。
+- **Restart Semantics**：严格区分用户意图、durable fact、runtime observation、UI projection；关闭、watcher 噪声或 fallback 不得默默把可恢复状态降级成终态。
+- **IPC Security**：Renderer 到 Main 的输入必须校验，禁止 blind trust。
+- **Resource Lifecycle**：事件监听、订阅、child process、watcher、disposable 必须成对清理。
+- **Performance**：避免阻塞 Main 线程；关注高频输入、重渲染、布局抖动、大文件和重 IO 路径。
+- **Data Integrity**：任何持久化结构、schema 或恢复语义变动都必须考虑兼容、迁移与回滚。
+
+#### 触发式合规门槛（Triggered Compliance Gates）
+
+- **Architecture**：禁止 Main / Preload / Renderer 逻辑越界；边界暴露统一走 `preload` 或契约层。
+- **Type Safety**：避免 `any`，IPC payload、跨层 DTO、边界返回值都要保持可校验、可推断。
+- **Security**：保持 Context Isolation；Renderer 禁止 Node Integration；能启用 Sandbox 的路径不要随意放弃。
+
+### UI 自动化与验证（UI Automation & Verification）
+
+对 UI 改动，尤其是 **Large Change**、高交互风险改动、或真实体验比纯逻辑更重要的改动，按以下方式选择验证手段：
+
+- **Web/Renderer 优先用 Playwright**：主路径走 `pnpm test:e2e` 或最低 meaningful layer 的 Playwright 用例。
+- **复杂交互辅以截图 / 录屏**：当行为依赖拖拽、滚动、动画、命中点或视觉反馈时，用截图或录屏帮助确认真实体验。
+- **提交前做一次 smoke 验证**：至少确认核心用户路径、关键视觉状态和交互目标没有回归。
+- **开发中用视觉调试**：必要时主动看截图、边框、命中区域、选择框、hover/active 状态，而不是只看日志和断言。
+- **小改动不强制全量 E2E**：除非 UI 回归风险很高，否则优先跑目标明确、成本更低的验证层。
 
 ## 全局硬规则（摘要）
 
@@ -62,7 +111,7 @@
 -   **Small vs Large**（详见 `AGENTS.md`）：
     -   **Small**：直接做，小步快反馈，跑针对性验证。
     -   **Large / 运行时高风险**：遵循 **Spec -> (Feasibility Check) -> Plan** 流程。
-        -   **高风险触发器（最易漏）**：启动/重启恢复、hydration、持久化写回、退出生命周期、跨层状态同步、external CLI / watcher 回写、fallback/cleanup 改写状态、多写者共享同一真相。
+        -   **高风险触发器（最易漏）**：启动/重启恢复、hydration、持久化写回、退出生命周期、跨层状态同步、external CLI / watcher 回写、fallback/cleanup 改写状态、多写者共享同一真相、边界冲突、同一入口对应多套竞争语义。
         -   **Spec**：明确验收标准、风险点及验证手段，等待确认。
         -   **Feasibility Check**：针对新技术/高性能/核心重构，必须先调研并跑通 PoC。
         -   **Plan**：制定详细执行计划，等待确认。
@@ -99,7 +148,7 @@
 
 ## 文档地图（按问题找入口）
 
--   **Agent 行为准则与详细工作流**：`AGENTS.md` (The Single Source of Truth for Agents)
+-   **Agent 关键指令与决策门槛**：`AGENTS.md`
 -   **架构标准（DDD + Clean）**：`docs/ARCHITECTURE.md`
 -   **完全重构计划**：`docs/REFACTOR_PLAN.md`
 -   **恢复模型与 owner 表**：`docs/RECOVERY_MODEL.md`
@@ -109,6 +158,7 @@
     -   任务 UI 标准：`docs/TASK_UI_STANDARD.md`
     -   视口导航标准：`docs/VIEWPORT_NAVIGATION_STANDARD.md`
 -   **终端渲染基准**：`docs/TERMINAL_TUI_RENDERING_BASELINE.md`
+-   **参考优秀项目与方案调研法**：`docs/REFERENCE_RESEARCH_METHOD.md`
 -   **调试指南**：`docs/DEBUGGING.md`
 -   **贡献代码指南**：`CONTRIBUTING.md`
 -   **API Client 生成与使用**：暂无，参考 `src/shared/contracts` 定义。
@@ -116,5 +166,6 @@
 ## 检索建议（避免一次性读完）
 
 -   优先在 `AGENTS.md` 中查找开发及其流程规范。
+-   若问题大概率已有行业成熟做法、主流产品先例或框架惯例，先读 `docs/REFERENCE_RESEARCH_METHOD.md`。
 -   涉及具体 UI/功能模块时，检索 `docs/` 下的相关文档。
 -   搜索现有代码中的实现模式，遵循 "Prioritize Reuse" 原则。
