@@ -206,10 +206,6 @@ function WorkspaceCanvasInner({
     closeTaskEditor,
     generateTaskEditorTitle,
     saveTaskEdits,
-    taskAssigner,
-    setTaskAssigner,
-    closeTaskAssigner,
-    applyTaskAssignment,
     taskDeleteConfirmation,
     setTaskDeleteConfirmation,
     confirmTaskDelete,
@@ -351,8 +347,6 @@ function WorkspaceCanvasInner({
     taskTitleModelLabel,
     handleViewportMoveEnd,
     minimapNodeColor,
-    taskAssignerAgentOptions,
-    activeTaskForAssigner,
     taskAgentEdges,
     spaceUi: {
       spaceActionMenu,
@@ -377,7 +371,6 @@ function WorkspaceCanvasInner({
     viewportRef,
     onViewportChange,
     flowNodes,
-    taskAssigner,
     contextMenu,
     setContextMenu,
     setEmptySelectionPrompt,
@@ -456,12 +449,6 @@ function WorkspaceCanvasInner({
       closeTaskEditor={closeTaskEditor}
       generateTaskEditorTitle={generateTaskEditorTitle}
       saveTaskEdits={saveTaskEdits}
-      taskAssigner={taskAssigner}
-      activeTaskTitleForAssigner={activeTaskForAssigner?.data.title ?? null}
-      taskAssignerAgentOptions={taskAssignerAgentOptions}
-      setTaskAssigner={setTaskAssigner}
-      closeTaskAssigner={closeTaskAssigner}
-      applyTaskAssignment={applyTaskAssignment}
       taskDeleteConfirmation={taskDeleteConfirmation}
       setTaskDeleteConfirmation={setTaskDeleteConfirmation}
       confirmTaskDelete={confirmTaskDelete}

@@ -135,13 +135,6 @@ export interface TaskEditorState {
   error: string | null
 }
 
-export interface TaskAssignerState {
-  taskNodeId: string
-  selectedAgentNodeId: string
-  isSaving: boolean
-  error: string | null
-}
-
 export interface TaskDeleteConfirmationState {
   nodeId: string
   title: string
