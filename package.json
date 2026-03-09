@@ -1,10 +1,19 @@
 {
-  "name": "cove",
+  "name": "opencove",
   "version": "0.1.0",
-  "description": "Cove - local-first desktop workspace for AI coding agents",
+  "productName": "OpenCove",
+  "description": "An infinite canvas multi-agent workspace for AI coding.",
   "main": "./out/main/index.js",
   "author": "deadwave",
   "license": "MIT",
+  "homepage": "https://github.com/DeadWaveWave/opencove#readme",
+  "bugs": {
+    "url": "https://github.com/DeadWaveWave/opencove/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeadWaveWave/opencove.git"
+  },
   "keywords": [
     "electron",
     "react",
@@ -14,6 +23,15 @@
     "codex",
     "developer-tools"
   ],
+  "build": {
+    "appId": "dev.deadwave.opencove",
+    "productName": "OpenCove",
+    "executableName": "OpenCove",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    }
+  },
   "engines": {
     "node": ">=22",
     "pnpm": ">=9"

@@ -17,8 +17,8 @@ describe('Example Test Suite', () => {
   })
 
   it('should work with objects', () => {
-    const obj = { name: 'Cove', version: '0.1.0' }
+    const obj = { name: 'OpenCove', version: '0.1.0' }
     expect(obj).toHaveProperty('name')
-    expect(obj.name).toBe('Cove')
+    expect(obj.name).toBe('OpenCove')
   })
 })

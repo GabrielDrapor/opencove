@@ -1,6 +1,6 @@
 # REFACTOR PLAN
 
-本文档定义本轮 Cove **完全重构**的落地计划。
+本文档定义本轮 OpenCove **完全重构**的落地计划。
 
 它不是通用架构规范；通用规范看 `docs/ARCHITECTURE.md`。
 它回答的是：**这一次重构要重构到什么结构、按什么顺序完成、以什么标准验收。**
@@ -495,4 +495,3 @@ tests/
 - 按 context 组织的 IPC、renderer、repository、platform adapters
 - 针对恢复路径的回归测试矩阵
 - 与代码一致的架构文档
-

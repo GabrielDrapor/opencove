@@ -29,7 +29,7 @@ export type PendingOperation =
     }
 
 const WORKTREE_API_UNAVAILABLE_ERROR =
-  'Worktree API is unavailable. Please restart Cove and try again.'
+  'Worktree API is unavailable. Please restart OpenCove and try again.'
 const DISALLOWED_BRANCH_CHARACTERS = [' ', '~', '^', ':', '?', '*', '[', '\\']
 
 type WorktreeApiClient = Window['coveApi']['worktree']

@@ -32,7 +32,7 @@ git push origin v0.1.0
 
 可选处理方式：
 - Finder：右键 App → 打开 → 再次确认
-- 或终端（拷贝到 Applications 后）：`xattr -dr com.apple.quarantine /Applications/cove.app`
+- 或终端（拷贝到 Applications 后）：`xattr -dr com.apple.quarantine /Applications/OpenCove.app`
 
 ## 后续启用签名 + 公证（可选）
 

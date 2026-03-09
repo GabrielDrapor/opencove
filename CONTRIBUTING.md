@@ -1,8 +1,8 @@
-# Contributing to Cove 🤝
+# Contributing to OpenCove 🤝
 
 First off, thanks for taking the time to contribute! 🎉
 
-Cove is an ambitious project to redefine how we build software with AI. Whether you're fixing a bug, improving documentation, or proposing a new feature, your help is welcome.
+OpenCove is an ambitious project to redefine how we build software with AI. Whether you're fixing a bug, improving documentation, or proposing a new feature, your help is welcome.
 
 For repository workflow and architecture rules, read `DEVELOPMENT.md` first. This document is the contributor-facing companion, focused on reviewability and high-risk change discipline.
 
@@ -30,8 +30,8 @@ This project and everyone participating in it is governed by the [Code of Conduc
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/cove.git
-   cd cove
+   git clone https://github.com/DeadWaveWave/opencove.git
+   cd OpenCove
    ```
 
 2. **Install dependencies**
@@ -82,7 +82,7 @@ Before submitting a PR, ensure your changes pass our quality checks:
 - **Components**: Functional components with hooks.
 - **Styling**: We use generic CSS/Tailwind (adhere to existing patterns).
 - **Architecture**: Follow the "Clean Architecture" separation in `src/main` vs `src/renderer`.
-- **SOLID, selectively**: Treat `SOLID` as a design check, not a ritual. In Cove, `S / I / D` usually matter most, `O` matters when extending providers/adapters/watchers, and `L` only matters when true subtype substitution exists.
+- **SOLID, selectively**: Treat `SOLID` as a design check, not a ritual. In OpenCove, `S / I / D` usually matter most, `O` matters when extending providers/adapters/watchers, and `L` only matters when true subtype substitution exists.
 
 ---
 

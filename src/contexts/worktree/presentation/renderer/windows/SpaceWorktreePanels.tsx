@@ -113,7 +113,7 @@ export function SpaceWorktreePanels({
 
           <section className="workspace-space-worktree__surface">
             <p className="workspace-space-worktree__hint">
-              Cove will generate the internal worktree path automatically.
+              OpenCove will generate the internal worktree path automatically.
             </p>
 
             <div className="workspace-space-worktree__mode-tabs">

@@ -6,6 +6,17 @@ import { hydrateCliPathForPackagedApp } from '../../platform/os/CliEnvironment'
 import { registerIpcHandlers } from './ipc/registerIpcHandlers'
 
 let ipcDisposable: ReturnType<typeof registerIpcHandlers> | null = null
+const LEGACY_USER_DATA_DIRECTORY_NAME = 'cove'
+const OPENCOVE_APP_USER_MODEL_ID = 'dev.deadwave.opencove'
+
+function preserveLegacyUserDataPath(): void {
+  const appDataPath = app.getPath('appData')
+  app.setPath('userData', resolve(appDataPath, LEGACY_USER_DATA_DIRECTORY_NAME))
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  preserveLegacyUserDataPath()
+}
 
 if (process.env.NODE_ENV === 'test' && process.env['COVE_TEST_USER_DATA_DIR']) {
   app.setPath('userData', resolve(process.env['COVE_TEST_USER_DATA_DIR']))
@@ -237,7 +248,7 @@ app.whenReady().then(() => {
   hydrateCliPathForPackagedApp(app.isPackaged === true)
 
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId(OPENCOVE_APP_USER_MODEL_ID)
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

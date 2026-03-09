@@ -1,6 +1,6 @@
 # Persistence (SQLite) Guide
 
-本文档描述 Cove 的持久化实现（Main 进程 SQLite）以及 **Schema 变更** 时的流程性工作。
+本文档描述 OpenCove 的持久化实现（Main 进程 SQLite）以及 **Schema 变更** 时的流程性工作。
 
 ## 1) 架构边界（必须）
 
@@ -75,4 +75,3 @@
   - Renderer 会显示一次性恢复提示（提示原因：`corrupt_db` / `migration_failed`）。
 
 以上机制保证“应用可启动”，但 **不等于迁移可以随意失败**。Schema 变更仍需严格测试与回归覆盖。
-

@@ -1,6 +1,6 @@
 # Changelog 📜
 
-All notable changes to **Cove** will be documented in this file.
+All notable changes to **OpenCove** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-02-13
 
 ### 🎉 Initial Alpha Release
-We are thrilled to unveil the first public alpha of Cove! This release focuses on the core "Infinite Canvas" experience and robust terminal integration.
+We are thrilled to unveil the first public alpha of OpenCove! This release focuses on the core "Infinite Canvas" experience and robust terminal integration.
 
 #### ✨ Features
 - **Infinite Canvas**: A boundless workspace to organize your thoughts and tools. Pan, zoom, and explore your codebase spatially.

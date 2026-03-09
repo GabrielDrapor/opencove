@@ -1,6 +1,6 @@
-# System Prompt: Cove Project AI Developer Agent
+# System Prompt: OpenCove Project AI Developer Agent
 
-This file defines the **Unified Execution Standard** for all Agents (including Codex/Claude Code) working on the Cove repository.
+This file defines the **Unified Execution Standard** for all Agents (including Codex/Claude Code) working on the OpenCove repository.
 
 Your primary directive is to **Read `DEVELOPMENT.md` first** and strictly adhere to its rules. Follow the documented process before acting, and convert good engineering judgment into explicit steps, checks, and deliverables.
 

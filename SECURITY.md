@@ -1,6 +1,6 @@
 # Security Policy 🔒
 
-Cove takes the security of our users and their code very seriously.
+OpenCove takes the security of our users and their code very seriously.
 
 ## Supported Versions
 
@@ -38,4 +38,4 @@ If a security report involves leaked keys/tokens:
 
 ---
 
-*Thank you for helping keep Cove secure.* 🛡️
+*Thank you for helping keep OpenCove secure.* 🛡️

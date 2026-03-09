@@ -92,7 +92,7 @@ export function SpaceWorktreeWindowDialog({
           <p className="workspace-space-worktree__meta">
             {isSpaceOnWorkspaceRoot
               ? `${space.name} is using the workspace root.`
-              : `${space.name} is bound to a Cove-managed worktree.`}
+              : `${space.name} is bound to an OpenCove-managed worktree.`}
           </p>
           <div className="workspace-space-worktree__status-row">
             <span className="workspace-space-worktree__status-chip">

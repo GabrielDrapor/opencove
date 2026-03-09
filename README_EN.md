@@ -3,15 +3,15 @@
 
 ![Cove_Header](./assets/images/cove_header.jpg)
 
-# Cove 🌌
+# OpenCove 🌌
 
-> **The Infinite Canvas for AI Engineering | AI 时代的无限画布工程台**
+> **The infinite canvas multi-agent workspace for AI coding | AI 编码的无限画布多 Agent 工作区**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Electron](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
 
-**Cove is an AI coding workspace born for the "Post-Chat Era".**
+**OpenCove is an infinite canvas multi-agent workspace for AI coding.**
 
-When AI coding evolves from simple "chat" to complex "task orchestration," traditional IDE terminals and chat windows fall short. Cove provides an **Infinite Deep Space Canvas**, allowing you to orchestrate multiple AI agents, manage task flows, and reorganize fragmented context spatially within a single view.
+When AI coding evolves from simple "chat" to complex "task orchestration," traditional IDE terminals and chat windows fall short. OpenCove provides an **Infinite Deep Space Canvas**, allowing you to orchestrate multiple AI agents, manage task flows, and reorganize fragmented context spatially within a single view.
 
 Say goodbye to chaotic tab switching. Embrace a **visual, spatial** paradigm for AI collaboration.
 
@@ -26,10 +26,10 @@ Organize your work on a virtually infinite 2D plane. Arrange terminals, agent se
 - **Persistent Viewport**: Your every drag and zoom is saved. Next time you open it, you're right back at the "scene of the crime."
 
 ### 🤖 Multi-Agent Orchestration
-Don't limit your agents to a single sidebar. In Cove, you can run multiple agent instances simultaneously.
+Don't limit your agents to a single sidebar. In OpenCove, you can run multiple agent instances simultaneously.
 - **Parallel Execution**: Run **Claude Code** on the left for architectural refactoring, while **Codex** on the right writes unit tests.
 - **Visualized State**: Intuitively see whether each agent is thinking, executing commands, or waiting for confirmation.
-- **Unified Protocol**: Whether it's Claude or OpenAI under the hood, Cove manages their PTY lifecycle with a unified protocol.
+- **Unified Protocol**: Whether it's Claude or OpenAI under the hood, OpenCove manages their PTY lifecycle with a unified protocol.
 
 ### 🔮 Cyber-Glass Immersive UI
 A **Deep Space Cyber-Glass** design language crafted for developers.
@@ -39,9 +39,9 @@ A **Deep Space Cyber-Glass** design language crafted for developers.
 
 ---
 
-## 🚀 Why Cove?
+## 🚀 Why OpenCove?
 
-| Traditional Mode | Cove Mode |
+| Traditional Mode | OpenCove Mode |
 | :--- | :--- |
 | **Linear Chat**: Context is pushed away by chat history, hard to backtrack. | **Spatial Nodes**: Key information stays permanently on the canvas, WYSIWYG. |
 | **Single Task**: Chat with one agent about one thing at a time. | **Multi-Threaded**: Command multiple agents on different modules in parallel. |
@@ -51,7 +51,7 @@ A **Deep Space Cyber-Glass** design language crafted for developers.
 
 ## 🛠️ Quick Start
 
-Cove is currently in Alpha. Developers are welcome to try it out.
+OpenCove is currently in Alpha. Developers are welcome to try it out.
 
 ## 📦 Downloads (macOS)
 
@@ -59,8 +59,8 @@ Download `.dmg` / `.zip` from GitHub Releases.
 
 > Current releases are **NOT signed or notarized** with Apple Developer ID. If Gatekeeper blocks the app on first launch:
 >
-> - Finder: right-click `cove.app` → **Open** → confirm again
-> - Or in Terminal (after copying to Applications): `xattr -dr com.apple.quarantine /Applications/cove.app`
+> - Finder: right-click `OpenCove.app` → **Open** → confirm again
+> - Or in Terminal (after copying to Applications): `xattr -dr com.apple.quarantine /Applications/OpenCove.app`
 
 ### Prerequisites
 - Node.js `>= 22`
@@ -71,7 +71,7 @@ Download `.dmg` / `.zip` from GitHub Releases.
 
 ```bash
 # Clone the repository
-git clone https://github.com/deadwavewave/cove.git
+git clone https://github.com/DeadWaveWave/opencove.git
 
 # Install dependencies
 pnpm install
@@ -94,11 +94,12 @@ Built on modern Web standards and Electron:
 
 ## 🤝 Contributing
 
-Cove is an open-source project. We need your help to define the IDE form factor of the AI era.
+OpenCove is an open-source project. We need your help to define the IDE form factor of the AI era.
 See [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
+For support expectations and help channels, see [SUPPORT.md](./SUPPORT.md).
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by the Cove Team. MIT License.</sub>
+  <sub>Built with ❤️ by the OpenCove Team. MIT License.</sub>
 </div>

@@ -1,6 +1,6 @@
 # Window UI Standard
 
-本规范定义 Cove 中所有“悬浮窗口/弹窗/面板”的统一视觉语言。
+本规范定义 OpenCove 中所有“悬浮窗口/弹窗/面板”的统一视觉语言。
 
 目标：
 - 一眼识别为同一系统；
@@ -66,4 +66,3 @@
 - 是否使用统一按钮语义（ghost/secondary/primary/danger）
 - 是否提供稳定 `data-testid`
 - 是否保证键盘与关闭行为一致（Esc / blur / confirm）
-

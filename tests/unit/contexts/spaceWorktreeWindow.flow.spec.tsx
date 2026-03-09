@@ -357,7 +357,9 @@ describe('SpaceWorktreeWindow flow', () => {
     fireEvent.click(screen.getByTestId('space-worktree-archive-submit'))
 
     expect(
-      await screen.findByText('Worktree API is unavailable. Please restart Cove and try again.'),
+      await screen.findByText(
+        'Worktree API is unavailable. Please restart OpenCove and try again.',
+      ),
     ).toBeVisible()
   })
 })

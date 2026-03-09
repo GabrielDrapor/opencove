@@ -1,12 +1,12 @@
 name: ✨ Feature Request
-description: Suggest an idea or new capability for Cove
+description: Suggest an idea or new capability for OpenCove
 title: '[FEAT] '
 labels: ['enhancement']
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in improving Cove!
+        Thanks for your interest in improving OpenCove!
         Please describe your idea in detail so we can understand the use case.
 
   - type: textarea

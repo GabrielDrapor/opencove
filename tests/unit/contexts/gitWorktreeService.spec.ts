@@ -25,7 +25,7 @@ async function createTempRepo(): Promise<string> {
 
   await runGit(['init'], repoDir)
   await runGit(['config', 'user.email', 'test@example.com'], repoDir)
-  await runGit(['config', 'user.name', 'Cove Test'], repoDir)
+  await runGit(['config', 'user.name', 'OpenCove Test'], repoDir)
 
   await writeFile(join(repoDir, 'README.md'), '# temp\n', 'utf8')
   await runGit(['add', '.'], repoDir)

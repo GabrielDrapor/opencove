@@ -2,7 +2,7 @@
 
 > 关联全局窗口规范：`docs/WINDOW_UI_STANDARD.md`
 
-本规范约束 Cove 中 Task 卡片与 Task 编辑体验的交互与视觉，目标是：
+本规范约束 OpenCove 中 Task 卡片与 Task 编辑体验的交互与视觉，目标是：
 
 1. 让用户在画布内快速改任务（最少点击）；
 2. 让复杂配置仍有完整编辑入口（可发现、可回退）；
@@ -91,4 +91,3 @@
 - 数据更新：`src/renderer/src/features/workspace/components/WorkspaceCanvas.tsx`
 - 样式：`src/renderer/src/styles.css`
 - E2E：`tests/e2e/workspace-canvas.spec.ts`
-
