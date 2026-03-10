@@ -190,17 +190,23 @@ function createWindow(): void {
   const devOrigin = is.dev ? resolveDevRendererOrigin() : null
   const rendererRootDir = join(__dirname, '../renderer')
   const e2eWindowMode = resolveE2EWindowMode()
-  const keepRendererActiveInBackground = e2eWindowMode !== 'normal'
+  const isTestEnv = process.env['NODE_ENV'] === 'test'
+  // In CI the window may not be considered foreground even in "normal" mode.
+  // Disable background throttling for all test runs to keep rAF/timers deterministic.
+  const keepRendererActiveInBackground = e2eWindowMode !== 'normal' || isTestEnv
   const keepRendererActiveWhenHidden = e2eWindowMode === 'hidden'
   const placeWindowOffscreen = e2eWindowMode === 'offscreen'
-  const disableRendererSandboxForTests = process.env['NODE_ENV'] === 'test'
+  const disableRendererSandboxForTests = isTestEnv
   const runtimeIconPath = resolveRuntimeIconPath()
+  const initialWidth = isTestEnv ? 1440 : 1200
+  const initialHeight = isTestEnv ? 900 : 800
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: initialWidth,
+    height: initialHeight,
     show: false,
+    ...(isTestEnv ? { useContentSize: true } : {}),
     ...(keepRendererActiveWhenHidden ? { paintWhenInitiallyHidden: true } : {}),
     ...(placeWindowOffscreen ? { x: E2E_OFFSCREEN_COORDINATE, y: E2E_OFFSCREEN_COORDINATE } : {}),
     autoHideMenuBar: true,

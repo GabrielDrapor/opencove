@@ -105,10 +105,19 @@ test.describe('Workspace Canvas - Minimap & Zoom', () => {
         })
         .toBeGreaterThan(1.01)
 
-      await terminal.locator('.terminal-node__terminal').click({
-        position: { x: 48, y: 48 },
-        force: true,
-      })
+      await expect(window.locator('.react-flow__node.dragging')).toHaveCount(0)
+
+      const terminalBody = terminal.locator('.terminal-node__terminal')
+      const terminalBox = await terminalBody.boundingBox()
+      if (!terminalBox) {
+        throw new Error('terminal bounding box unavailable for normalization click')
+      }
+
+      // Click near the center of the terminal to avoid occluded edges after drag while zoomed-in.
+      await window.mouse.click(
+        terminalBox.x + terminalBox.width / 2,
+        terminalBox.y + Math.min(96, terminalBox.height / 2),
+      )
 
       await expect
         .poll(async () => {
@@ -178,10 +187,16 @@ test.describe('Workspace Canvas - Minimap & Zoom', () => {
       const deltaBefore = await readCenterDelta()
       expect(deltaBefore.dx).toBeGreaterThan(120)
 
-      await secondTerminal.locator('.terminal-node__terminal').click({
-        position: { x: 48, y: 48 },
-        force: true,
-      })
+      const terminalBody = secondTerminal.locator('.terminal-node__terminal')
+      const terminalBox = await terminalBody.boundingBox()
+      if (!terminalBox) {
+        throw new Error('second terminal bounding box unavailable for zoom normalization click')
+      }
+
+      await window.mouse.click(
+        terminalBox.x + terminalBox.width / 2,
+        terminalBox.y + Math.min(96, terminalBox.height / 2),
+      )
 
       await expect
         .poll(async () => {
@@ -410,7 +425,6 @@ test.describe('Workspace Canvas - Minimap & Zoom', () => {
         .toMatchObject({
           isMinimapVisible: false,
         })
-
       const persistedViewport = await window.evaluate<{
         x: number
         y: number
@@ -418,12 +432,10 @@ test.describe('Workspace Canvas - Minimap & Zoom', () => {
       } | null>(
         async ({ key, workspaceId }) => {
           void key
-
           const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
           if (!raw) {
             return null
           }
-
           const parsed = JSON.parse(raw) as {
             workspaces?: Array<{
               id?: string
