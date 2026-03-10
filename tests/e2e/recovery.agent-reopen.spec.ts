@@ -10,7 +10,7 @@ import {
 
 async function readWorkspaceStateRaw(window: Page): Promise<unknown | null> {
   const raw = await window.evaluate(async () => {
-    return await window.coveApi.persistence.readWorkspaceStateRaw()
+    return await window.opencoveApi.persistence.readWorkspaceStateRaw()
   })
 
   if (!raw) {
@@ -138,8 +138,8 @@ test.describe('Recovery - Agent reopen', () => {
         userDataDir,
         cleanupUserDataDir: false,
         env: {
-          COVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
-          COVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
+          OPENCOVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
+          OPENCOVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
         },
       })
 
@@ -301,8 +301,8 @@ test.describe('Recovery - Agent reopen', () => {
         userDataDir,
         cleanupUserDataDir: false,
         env: {
-          COVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
-          COVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
+          OPENCOVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
+          OPENCOVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
         },
       })
 

@@ -13,7 +13,7 @@ function createNodes(): Node<TerminalNodeData>[] {
   return []
 }
 
-function createSpaces(directoryPath = '/repo/.cove/worktrees/space-1'): WorkspaceSpaceState[] {
+function createSpaces(directoryPath = '/repo/.opencove/worktrees/space-1'): WorkspaceSpaceState[] {
   return [
     {
       id: 'space-1',
@@ -31,7 +31,7 @@ function installWorktreeApi(overrides?: Record<string, unknown>): {
 } {
   const create = vi.fn(async () => ({
     worktree: {
-      path: '/repo/.cove/worktrees/space-demo--1a2b3c4d',
+      path: '/repo/.opencove/worktrees/space-demo--1a2b3c4d',
       head: null,
       branch: 'space/demo',
     },
@@ -50,7 +50,7 @@ function installWorktreeApi(overrides?: Record<string, unknown>): {
       worktrees: [
         { path: '/repo', head: 'abc', branch: 'main' },
         {
-          path: '/repo/.cove/worktrees/space-1',
+          path: '/repo/.opencove/worktrees/space-1',
           head: 'def',
           branch: 'feature/demo',
         },
@@ -67,7 +67,7 @@ function installWorktreeApi(overrides?: Record<string, unknown>): {
     ...overrides,
   }
 
-  Object.defineProperty(window, 'coveApi', {
+  Object.defineProperty(window, 'opencoveApi', {
     configurable: true,
     writable: true,
     value: {
@@ -83,7 +83,7 @@ function installWorktreeApi(overrides?: Record<string, unknown>): {
 
 describe('SpaceWorktreeWindow flow', () => {
   afterEach(() => {
-    delete (window as unknown as { coveApi?: unknown }).coveApi
+    delete (window as unknown as { opencoveApi?: unknown }).opencoveApi
   })
 
   it('shows archive action for managed worktrees and create action for root spaces', async () => {
@@ -95,7 +95,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces()}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={() => undefined}
         onUpdateSpaceDirectory={() => undefined}
@@ -119,7 +119,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces('/repo')}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={() => undefined}
         onUpdateSpaceDirectory={() => undefined}
@@ -148,7 +148,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces()}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={onClose}
         onUpdateSpaceDirectory={onUpdateSpaceDirectory}
@@ -164,7 +164,7 @@ describe('SpaceWorktreeWindow flow', () => {
     await waitFor(() => {
       expect(remove).toHaveBeenCalledWith({
         repoPath: '/repo',
-        worktreePath: '/repo/.cove/worktrees/space-1',
+        worktreePath: '/repo/.opencove/worktrees/space-1',
         force: false,
         deleteBranch: true,
       })
@@ -184,7 +184,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces()}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={onClose}
         onUpdateSpaceDirectory={onUpdateSpaceDirectory}
@@ -200,7 +200,7 @@ describe('SpaceWorktreeWindow flow', () => {
     await waitFor(() => {
       expect(remove).toHaveBeenCalledWith({
         repoPath: '/repo',
-        worktreePath: '/repo/.cove/worktrees/space-1',
+        worktreePath: '/repo/.opencove/worktrees/space-1',
         force: false,
         deleteBranch: false,
       })
@@ -227,7 +227,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces('/repo')}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={onClose}
         onUpdateSpaceDirectory={onUpdateSpaceDirectory}
@@ -250,7 +250,7 @@ describe('SpaceWorktreeWindow flow', () => {
     await waitFor(() => {
       expect(onUpdateSpaceDirectory).toHaveBeenCalledWith(
         'space-1',
-        '/repo/.cove/worktrees/space-demo--1a2b3c4d',
+        '/repo/.opencove/worktrees/space-demo--1a2b3c4d',
         expect.objectContaining({
           markNodeDirectoryMismatch: true,
           renameSpaceTo: 'space/demo',
@@ -278,7 +278,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces()}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={onClose}
         onUpdateSpaceDirectory={onUpdateSpaceDirectory}
@@ -299,7 +299,7 @@ describe('SpaceWorktreeWindow flow', () => {
       expect(closeNodesById).toHaveBeenCalledWith(['agent-1', 'terminal-1'])
       expect(remove).toHaveBeenCalledWith({
         repoPath: '/repo',
-        worktreePath: '/repo/.cove/worktrees/space-1',
+        worktreePath: '/repo/.opencove/worktrees/space-1',
         force: false,
         deleteBranch: false,
       })
@@ -309,7 +309,7 @@ describe('SpaceWorktreeWindow flow', () => {
   })
 
   it('shows an actionable error when archive API is unavailable', async () => {
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -319,7 +319,7 @@ describe('SpaceWorktreeWindow flow', () => {
             branches: ['main'],
           })),
           listWorktrees: vi.fn(async () => ({
-            worktrees: [{ path: '/repo/.cove/worktrees/space-1', head: 'def', branch: 'main' }],
+            worktrees: [{ path: '/repo/.opencove/worktrees/space-1', head: 'def', branch: 'main' }],
           })),
           suggestNames: vi.fn(async () => ({
             branchName: 'space/demo',
@@ -329,7 +329,7 @@ describe('SpaceWorktreeWindow flow', () => {
           })),
           create: vi.fn(async () => ({
             worktree: {
-              path: '/repo/.cove/worktrees/space-demo--1a2b3c4d',
+              path: '/repo/.opencove/worktrees/space-demo--1a2b3c4d',
               head: null,
               branch: 'space/demo',
             },
@@ -344,7 +344,7 @@ describe('SpaceWorktreeWindow flow', () => {
         spaces={createSpaces()}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={() => undefined}
         onUpdateSpaceDirectory={() => undefined}

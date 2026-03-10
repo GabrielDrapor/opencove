@@ -122,7 +122,7 @@ test.describe('Workspace Canvas - Spaces (Overlay & Drag)', () => {
           async ({ key, nodeId, spaceId }) => {
             void key
 
-            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+            const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return null
             }

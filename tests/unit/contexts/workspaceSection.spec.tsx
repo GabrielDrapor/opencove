@@ -11,15 +11,15 @@ describe('WorkspaceSection', () => {
       <WorkspaceSection
         workspaceName="Demo Project"
         workspacePath="/repo/demo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         onChangeWorktreesRoot={onChangeWorktreesRoot}
       />,
     )
 
     expect(screen.getByText('Workspace Worktree')).toBeVisible()
-    expect(screen.getByTestId('settings-worktree-root')).toHaveValue('.cove/worktrees')
+    expect(screen.getByTestId('settings-worktree-root')).toHaveValue('.opencove/worktrees')
     expect(screen.getByText(/Relative path is based on project root/i)).toBeVisible()
-    expect(screen.getByText('/repo/demo/.cove/worktrees')).toBeVisible()
+    expect(screen.getByText('/repo/demo/.opencove/worktrees')).toBeVisible()
 
     fireEvent.change(screen.getByTestId('settings-worktree-root'), {
       target: { value: '/tmp/custom-worktrees' },

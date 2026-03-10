@@ -24,13 +24,13 @@ export function registerIpcHandlers(): IpcRegistrationDisposable {
       return await persistenceStorePromise
     }
 
-    const dbPath = resolve(app.getPath('userData'), 'cove.db')
+    const dbPath = resolve(app.getPath('userData'), 'opencove.db')
     persistenceStorePromise = createPersistenceStore({ dbPath })
     return await persistenceStorePromise
   }
 
-  if (process.env.NODE_ENV === 'test' && process.env.COVE_TEST_WORKSPACE) {
-    void approvedWorkspaces.registerRoot(resolve(process.env.COVE_TEST_WORKSPACE))
+  if (process.env.NODE_ENV === 'test' && process.env.OPENCOVE_TEST_WORKSPACE) {
+    void approvedWorkspaces.registerRoot(resolve(process.env.OPENCOVE_TEST_WORKSPACE))
   }
 
   const disposables: IpcRegistrationDisposable[] = [

@@ -121,7 +121,7 @@ describe('WorkspaceCanvas agent launch guard', () => {
     const launch = vi.fn(() => deferred.promise)
     const onExit = vi.fn(() => () => undefined)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -293,7 +293,7 @@ describe('WorkspaceCanvas agent launch guard', () => {
     const launch = vi.fn(() => deferred.promise)
     const onExit = vi.fn(() => () => undefined)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

@@ -427,7 +427,7 @@ export function useWorkspaceCanvasInteractions({
         ? targetSpace.directoryPath
         : workspacePath
 
-    const spawned = await window.coveApi.pty.spawn({
+    const spawned = await window.opencoveApi.pty.spawn({
       cwd: resolvedCwd,
       cols: 80,
       rows: 24,

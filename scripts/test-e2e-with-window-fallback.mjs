@@ -109,19 +109,19 @@ async function main() {
     process.exit(buildResult.code)
   }
 
-  const currentWindowMode = resolveWindowMode(process.env['COVE_E2E_WINDOW_MODE'])
+  const currentWindowMode = resolveWindowMode(process.env['OPENCOVE_E2E_WINDOW_MODE'])
   const fallbackWindowMode = resolveFallbackWindowMode(currentWindowMode)
 
   const firstRunArgs = ['exec', 'playwright', 'test', ...forwardedArgs]
   const firstRun = await runCommand(firstRunArgs, {
     ...process.env,
-    COVE_E2E_WINDOW_MODE: currentWindowMode,
+    OPENCOVE_E2E_WINDOW_MODE: currentWindowMode,
   })
   if (firstRun.code === 0) {
     process.exit(0)
   }
 
-  if (isTruthyEnv(process.env['COVE_E2E_DISABLE_CRASH_FALLBACK'])) {
+  if (isTruthyEnv(process.env['OPENCOVE_E2E_DISABLE_CRASH_FALLBACK'])) {
     process.exit(firstRun.code)
   }
 
@@ -134,12 +134,12 @@ async function main() {
   }
 
   writeStderr(
-    `[e2e-fallback] Detected crash-like failure in ${currentWindowMode} mode. Rerunning last failed tests with COVE_E2E_WINDOW_MODE=${fallbackWindowMode}...`,
+    `[e2e-fallback] Detected crash-like failure in ${currentWindowMode} mode. Rerunning last failed tests with OPENCOVE_E2E_WINDOW_MODE=${fallbackWindowMode}...`,
   )
 
   const fallbackRun = await runCommand(['exec', 'playwright', 'test', '--last-failed'], {
     ...process.env,
-    COVE_E2E_WINDOW_MODE: fallbackWindowMode,
+    OPENCOVE_E2E_WINDOW_MODE: fallbackWindowMode,
   })
 
   if (fallbackRun.code === 0) {

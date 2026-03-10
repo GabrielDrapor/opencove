@@ -49,7 +49,7 @@ describe('GitWorktreeService', () => {
   it('lists worktrees and creates a new worktree under the configured root', async () => {
     repoDir = await createTempRepo()
     const canonicalRepoDir = await realpath(repoDir)
-    const worktreesRoot = join(repoDir, '.cove', 'worktrees')
+    const worktreesRoot = join(repoDir, '.opencove', 'worktrees')
     await mkdir(worktreesRoot, { recursive: true })
 
     const { createGitWorktree, listGitWorktrees } =
@@ -75,7 +75,7 @@ describe('GitWorktreeService', () => {
   it('removes a created worktree and optionally deletes its branch', async () => {
     repoDir = await createTempRepo()
     const canonicalRepoDir = await realpath(repoDir)
-    const worktreesRoot = join(repoDir, '.cove', 'worktrees')
+    const worktreesRoot = join(repoDir, '.opencove', 'worktrees')
     await mkdir(worktreesRoot, { recursive: true })
 
     const { createGitWorktree, listGitBranches, listGitWorktrees, removeGitWorktree } =
@@ -109,7 +109,7 @@ describe('GitWorktreeService', () => {
   it('renames the branch checked out by a worktree', async () => {
     repoDir = await createTempRepo()
     const canonicalRepoDir = await realpath(repoDir)
-    const worktreesRoot = join(repoDir, '.cove', 'worktrees')
+    const worktreesRoot = join(repoDir, '.opencove', 'worktrees')
     await mkdir(worktreesRoot, { recursive: true })
 
     const { createGitWorktree, listGitBranches, listGitWorktrees, renameGitBranch } =
@@ -146,7 +146,7 @@ describe('GitWorktreeService', () => {
   it('rejects adding a worktree for a branch already checked out elsewhere', async () => {
     repoDir = await createTempRepo()
     const canonicalRepoDir = await realpath(repoDir)
-    const worktreesRoot = join(repoDir, '.cove', 'worktrees')
+    const worktreesRoot = join(repoDir, '.opencove', 'worktrees')
     await mkdir(worktreesRoot, { recursive: true })
 
     const { createGitWorktree } =

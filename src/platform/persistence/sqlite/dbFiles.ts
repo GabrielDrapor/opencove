@@ -20,7 +20,7 @@ export async function backupDbFile(dbPath: string, now: Date): Promise<string | 
   }
 
   const stamp = formatFileTimestamp(now)
-  const backupPath = resolve(dirname(dbPath), `cove.db.bak-${stamp}`)
+  const backupPath = resolve(dirname(dbPath), `opencove.db.bak-${stamp}`)
 
   await copyFile(dbPath, backupPath)
   return backupPath
@@ -32,7 +32,7 @@ export async function moveCorruptDbAside(dbPath: string, now: Date): Promise<str
   }
 
   const stamp = formatFileTimestamp(now)
-  const nextPath = resolve(dirname(dbPath), `cove.db.corrupt-${stamp}`)
+  const nextPath = resolve(dirname(dbPath), `opencove.db.corrupt-${stamp}`)
 
   await rename(dbPath, nextPath)
   return nextPath

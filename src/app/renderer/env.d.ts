@@ -1,7 +1,7 @@
-import { CoveApi } from '../preload/index'
+import { OpenCoveApi } from '../preload/index'
 
 declare global {
   interface Window {
-    coveApi: CoveApi
+    opencoveApi: OpenCoveApi
   }
 }

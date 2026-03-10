@@ -19,7 +19,7 @@ describe('WorkspaceCanvas task run agent auto resize', () => {
       resumeSessionId: null,
     }))
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

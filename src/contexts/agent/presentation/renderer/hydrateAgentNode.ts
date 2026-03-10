@@ -32,7 +32,7 @@ async function fallbackToFailedAgentTerminal({
   const now = new Date().toISOString()
 
   try {
-    const fallback = await window.coveApi.pty.spawn({
+    const fallback = await window.opencoveApi.pty.spawn({
       cwd,
       cols: 80,
       rows: 24,
@@ -77,7 +77,7 @@ async function resolvePendingResumeSessionId(node: Node<TerminalNodeData>): Prom
     return null
   }
 
-  const resolveResumeSessionId = window.coveApi.agent.resolveResumeSessionId
+  const resolveResumeSessionId = window.opencoveApi.agent.resolveResumeSessionId
   if (typeof resolveResumeSessionId !== 'function') {
     return null
   }
@@ -138,7 +138,7 @@ export async function hydrateAgentNode({
 
   if (shouldAutoResumeAgent) {
     try {
-      const restoredAgent = await window.coveApi.agent.launch({
+      const restoredAgent = await window.opencoveApi.agent.launch({
         provider: sanitizedAgent.provider,
         cwd: sanitizedAgent.executionDirectory,
         prompt: sanitizedAgent.prompt,
@@ -183,7 +183,7 @@ export async function hydrateAgentNode({
 
   if (shouldRelaunchBlankAgent) {
     try {
-      const relaunchedAgent = await window.coveApi.agent.launch({
+      const relaunchedAgent = await window.opencoveApi.agent.launch({
         provider: sanitizedAgent.provider,
         cwd: sanitizedAgent.executionDirectory,
         prompt: sanitizedAgent.prompt,
@@ -225,7 +225,7 @@ export async function hydrateAgentNode({
   }
 
   try {
-    const spawned = await window.coveApi.pty.spawn({
+    const spawned = await window.opencoveApi.pty.spawn({
       cwd: sanitizedAgent.executionDirectory,
       cols: 80,
       rows: 24,

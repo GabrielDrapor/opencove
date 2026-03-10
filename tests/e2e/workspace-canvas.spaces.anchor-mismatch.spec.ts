@@ -74,7 +74,7 @@ test.describe('Workspace Canvas - Spaces (Anchors & Directory Guards)', () => {
         async ({ key, spaceId }) => {
           void key
 
-          const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+          const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
           if (!raw) {
             return null
           }
@@ -114,7 +114,7 @@ test.describe('Workspace Canvas - Spaces (Anchors & Directory Guards)', () => {
     const { electronApp, window } = await launchApp()
 
     try {
-      const worktreePath = `${testWorkspacePath}/.cove/worktrees/wt-ownership`
+      const worktreePath = `${testWorkspacePath}/.opencove/worktrees/wt-ownership`
 
       await clearAndSeedWorkspace(
         window,
@@ -219,7 +219,7 @@ test.describe('Workspace Canvas - Spaces (Anchors & Directory Guards)', () => {
             async ({ key, nodeId, spaceId }) => {
               void key
 
-              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+              const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return null
               }
@@ -332,7 +332,7 @@ test.describe('Workspace Canvas - Spaces (Anchors & Directory Guards)', () => {
             async ({ key, nodeId, agentNodeId }) => {
               void key
 
-              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+              const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return null
               }
@@ -443,7 +443,7 @@ test.describe('Workspace Canvas - Spaces (Anchors & Directory Guards)', () => {
             async ({ key }) => {
               void key
 
-              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+              const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return null
               }

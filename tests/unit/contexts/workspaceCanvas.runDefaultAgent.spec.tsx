@@ -111,7 +111,7 @@ describe('WorkspaceCanvas run default agent', () => {
       resumeSessionId: null,
     }))
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

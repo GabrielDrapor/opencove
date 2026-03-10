@@ -28,15 +28,15 @@ pnpm test:e2e
 
 ### 默认窗口模式与自动降级
 
-- 默认窗口模式：`COVE_E2E_WINDOW_MODE=offscreen`
+- 默认窗口模式：`OPENCOVE_E2E_WINDOW_MODE=offscreen`
 - 这是后台运行模式，通常比 `hidden` 更稳定。
 - 若日志命中 Electron/Chromium 崩溃特征（如 `SIGSEGV`、`Target page, context or browser has been closed`），脚本会按更稳模式自动重试失败用例。
 
 常用控制项：
 
 ```bash
-COVE_E2E_WINDOW_MODE=normal|inactive|offscreen|hidden pnpm test:e2e
-COVE_E2E_DISABLE_CRASH_FALLBACK=1 pnpm test:e2e
+OPENCOVE_E2E_WINDOW_MODE=normal|inactive|offscreen|hidden pnpm test:e2e
+OPENCOVE_E2E_DISABLE_CRASH_FALLBACK=1 pnpm test:e2e
 ```
 
 ### 单独跑 Playwright 时必须先构建

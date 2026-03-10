@@ -71,7 +71,7 @@ function installMockApi({
   launch: ReturnType<typeof vi.fn>
   resolveResumeSessionId?: ReturnType<typeof vi.fn>
 }) {
-  Object.defineProperty(window, 'coveApi', {
+  Object.defineProperty(window, 'opencoveApi', {
     configurable: true,
     writable: true,
     value: {

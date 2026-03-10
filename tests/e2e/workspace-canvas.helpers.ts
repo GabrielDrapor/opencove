@@ -38,9 +38,11 @@ function isRetryableLaunchError(error: unknown): boolean {
 
 function resolveLaunchModes(windowMode?: E2EWindowMode): E2EWindowMode[] {
   const requestedMode =
-    windowMode ?? (process.env['COVE_E2E_WINDOW_MODE'] as E2EWindowMode | undefined) ?? 'offscreen'
+    windowMode ??
+    (process.env['OPENCOVE_E2E_WINDOW_MODE'] as E2EWindowMode | undefined) ??
+    'offscreen'
 
-  if (isTruthyEnv(process.env['COVE_E2E_DISABLE_CRASH_FALLBACK'])) {
+  if (isTruthyEnv(process.env['OPENCOVE_E2E_DISABLE_CRASH_FALLBACK'])) {
     return [requestedMode]
   }
 
@@ -214,10 +216,10 @@ async function launchAppInMode(
         NODE_ENV: 'test',
         HOME: testHomeDir,
         USERPROFILE: testHomeDir,
-        COVE_TEST_WORKSPACE: testWorkspacePath,
-        COVE_TEST_USER_DATA_DIR: userDataDir,
-        COVE_TEST_AGENT_STUB_SCRIPT: testAgentStubScriptPath,
-        COVE_E2E_WINDOW_MODE: launchMode,
+        OPENCOVE_TEST_WORKSPACE: testWorkspacePath,
+        OPENCOVE_TEST_USER_DATA_DIR: userDataDir,
+        OPENCOVE_TEST_AGENT_STUB_SCRIPT: testAgentStubScriptPath,
+        OPENCOVE_E2E_WINDOW_MODE: launchMode,
         ...options.env,
       },
     })
@@ -311,7 +313,7 @@ export async function seedWorkspaceState(
     }
 
     const writeResult = await window.evaluate(async state => {
-      return await window.coveApi.persistence.writeWorkspaceStateRaw({
+      return await window.opencoveApi.persistence.writeWorkspaceStateRaw({
         raw: JSON.stringify(state),
       })
     }, seededState)
@@ -330,7 +332,7 @@ export async function seedWorkspaceState(
     }))
 
     const seededReady = await window.evaluate(async expectedWorkspaces => {
-      const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+      const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
       if (!raw) {
         return false
       }

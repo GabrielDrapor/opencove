@@ -13,7 +13,7 @@ export function useWorkspaceCanvasPtyTaskCompletion({
   onRequestPersistFlush?: () => void
 }): void {
   useEffect(() => {
-    const ptyWithOptionalState = window.coveApi.pty as typeof window.coveApi.pty & {
+    const ptyWithOptionalState = window.opencoveApi.pty as typeof window.opencoveApi.pty & {
       onState?:
         | ((
             listener: (event: { sessionId: string; state: 'working' | 'standby' }) => void,
@@ -116,7 +116,7 @@ export function useWorkspaceCanvasPtyTaskCompletion({
           })
         : () => undefined
 
-    const unsubscribeExit = window.coveApi.pty.onExit(event => {
+    const unsubscribeExit = window.opencoveApi.pty.onExit(event => {
       let didChange = false
 
       setNodes(prevNodes => {

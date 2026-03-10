@@ -13,7 +13,7 @@ test.describe('Workspace Canvas - Selection (Terminal Multi Drag)', () => {
     return await window.evaluate(async key => {
       void key
 
-      const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+      const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
       if (!raw) {
         return null
       }

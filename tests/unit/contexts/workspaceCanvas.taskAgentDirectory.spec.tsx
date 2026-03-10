@@ -102,7 +102,7 @@ describe('WorkspaceCanvas task agent directory', () => {
       resumeSessionId: 'resume-1',
     }))
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -127,7 +127,7 @@ describe('WorkspaceCanvas task agent directory', () => {
     })
 
     const now = new Date().toISOString()
-    const worktreeDirectory = '/tmp/repo/.cove/worktrees/demo'
+    const worktreeDirectory = '/tmp/repo/.opencove/worktrees/demo'
 
     const initialNodes: Node<TerminalNodeData>[] = [
       {

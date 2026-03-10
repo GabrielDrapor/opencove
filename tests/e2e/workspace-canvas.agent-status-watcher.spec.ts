@@ -114,8 +114,8 @@ test.describe('Workspace Canvas - Agent Status Watcher', () => {
     const { electronApp, window } = await launchApp({
       windowMode: 'offscreen',
       env: {
-        COVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
-        COVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
+        OPENCOVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
+        OPENCOVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
       },
     })
 
@@ -150,8 +150,8 @@ test.describe('Workspace Canvas - Agent Status Watcher', () => {
     const { electronApp, window } = await launchApp({
       windowMode: 'offscreen',
       env: {
-        COVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
-        COVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
+        OPENCOVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
+        OPENCOVE_TEST_AGENT_SESSION_SCENARIO: 'codex-standby-no-newline',
       },
     })
 
@@ -191,8 +191,8 @@ test.describe('Workspace Canvas - Agent Status Watcher', () => {
     const { electronApp, window } = await launchApp({
       windowMode: 'offscreen',
       env: {
-        COVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
-        COVE_TEST_AGENT_SESSION_SCENARIO: 'codex-commentary-then-final',
+        OPENCOVE_TEST_ENABLE_SESSION_STATE_WATCHER: '1',
+        OPENCOVE_TEST_AGENT_SESSION_SCENARIO: 'codex-commentary-then-final',
       },
     })
 

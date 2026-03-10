@@ -10,7 +10,7 @@ import {
 
 async function readTerminalBoundDirectory(window: Parameters<typeof clearAndSeedWorkspace>[0]) {
   return await window.evaluate(async () => {
-    const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+    const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
     if (!raw) {
       return null
     }
@@ -49,7 +49,7 @@ test.describe('Recovery - Terminal worktree reopen', () => {
   test('reopens a space terminal in its bound worktree directory after app restart', async () => {
     const userDataDir = await createTestUserDataDir()
     const worktreeName = `wt-e2e-terminal-reopen-${Date.now()}`
-    const worktreePath = path.join(testWorkspacePath, '.cove', 'worktrees', worktreeName)
+    const worktreePath = path.join(testWorkspacePath, '.opencove', 'worktrees', worktreeName)
 
     await mkdir(worktreePath, { recursive: true })
 

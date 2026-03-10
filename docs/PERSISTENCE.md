@@ -69,9 +69,9 @@
 应用启动创建 persistence store 时：
 
 - 当检测到需要从旧版本升级（`user_version < DB_SCHEMA_VERSION`）：
-  - 会先备份 `cove.db`（同目录 `cove.db.bak-<timestamp>`），再执行迁移。
+  - 会先备份 `opencove.db`（同目录 `opencove.db.bak-<timestamp>`），再执行迁移。
 - 若打开数据库失败或迁移抛错：
-  - 会将原 db 重命名为 `cove.db.corrupt-<timestamp>` 并创建新库继续启动；
+  - 会将原 db 重命名为 `opencove.db.corrupt-<timestamp>` 并创建新库继续启动；
   - Renderer 会显示一次性恢复提示（提示原因：`corrupt_db` / `migration_failed`）。
 
 以上机制保证“应用可启动”，但 **不等于迁移可以随意失败**。Schema 变更仍需严格测试与回归覆盖。

@@ -27,8 +27,8 @@ export function registerWorkspaceIpcHandlers(
   ipcMain.handle(
     IPC_CHANNELS.workspaceSelectDirectory,
     async (): Promise<WorkspaceDirectory | null> => {
-      if (process.env.NODE_ENV === 'test' && process.env.COVE_TEST_WORKSPACE) {
-        const testWorkspacePath = resolve(process.env.COVE_TEST_WORKSPACE)
+      if (process.env.NODE_ENV === 'test' && process.env.OPENCOVE_TEST_WORKSPACE) {
+        const testWorkspacePath = resolve(process.env.OPENCOVE_TEST_WORKSPACE)
         await approvedWorkspaces.registerRoot(testWorkspacePath)
         return {
           id: crypto.randomUUID(),

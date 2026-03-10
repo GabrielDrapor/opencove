@@ -47,7 +47,7 @@ export async function resumeTaskAgentSessionAction(
   const taskDirectory = resolveTaskDirectory(taskNodeId, context.spacesRef, context.workspacePath)
 
   try {
-    const launched = await window.coveApi.agent.launch({
+    const launched = await window.opencoveApi.agent.launch({
       provider: record.provider,
       cwd: record.boundDirectory,
       prompt: record.prompt,

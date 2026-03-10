@@ -110,7 +110,7 @@ export function TerminalNode({
       return undefined
     }
 
-    const ptyWithOptionalAttach = window.coveApi.pty as typeof window.coveApi.pty & {
+    const ptyWithOptionalAttach = window.opencoveApi.pty as typeof window.opencoveApi.pty & {
       attach?: (payload: { sessionId: string }) => Promise<void>
       detach?: (payload: { sessionId: string }) => Promise<void>
     }
@@ -142,7 +142,9 @@ export function TerminalNode({
     fitAddonRef.current = fitAddon
 
     let disposeXtermPasteGuards: () => void = () => undefined
-    const ptyWriteQueue = createPtyWriteQueue(data => window.coveApi.pty.write({ sessionId, data }))
+    const ptyWriteQueue = createPtyWriteQueue(data =>
+      window.opencoveApi.pty.write({ sessionId, data }),
+    )
     terminal.attachCustomKeyEventHandler(event => {
       if (
         event.key !== 'Enter' ||
@@ -166,7 +168,7 @@ export function TerminalNode({
       terminal.open(containerRef.current)
       disposeXtermPasteGuards = registerXtermPasteGuards(containerRef.current)
       requestAnimationFrame(syncTerminalSize)
-      if (window.coveApi.meta.isTest) {
+      if (window.opencoveApi.meta.isTest) {
         terminal.focus()
       }
     }
@@ -198,7 +200,7 @@ export function TerminalNode({
     const bufferedDataChunks: string[] = []
     let bufferedExitCode: number | null = null
 
-    const unsubscribeData = window.coveApi.pty.onData(event => {
+    const unsubscribeData = window.opencoveApi.pty.onData(event => {
       if (event.sessionId !== sessionId) {
         return
       }
@@ -213,7 +215,7 @@ export function TerminalNode({
       markScrollbackDirty()
     })
 
-    const unsubscribeExit = window.coveApi.pty.onExit(event => {
+    const unsubscribeExit = window.opencoveApi.pty.onExit(event => {
       if (event.sessionId !== sessionId) {
         return
       }
@@ -290,7 +292,7 @@ export function TerminalNode({
       let rawSnapshot = baseRawSnapshot
 
       try {
-        const snapshot = await window.coveApi.pty.snapshot({ sessionId })
+        const snapshot = await window.opencoveApi.pty.snapshot({ sessionId })
         if (cachedSerializedScreen.length > 0) {
           restoredPayload = `${cachedSerializedScreen}${resolveScrollbackDelta(baseRawSnapshot, snapshot.data)}`
           rawSnapshot = mergeScrollbackSnapshots(baseRawSnapshot, snapshot.data)

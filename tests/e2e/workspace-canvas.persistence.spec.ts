@@ -50,7 +50,7 @@ test.describe('Workspace Canvas - Persistence', () => {
       await expect(terminal).toBeVisible()
       await expect(terminal.locator('.xterm')).toBeVisible()
 
-      const token = `COVE_PERSIST_${Date.now()}`
+      const token = `OPENCOVE_PERSIST_${Date.now()}`
       await terminal.locator('.xterm').click()
       await expect(terminal.locator('.xterm-helper-textarea')).toBeFocused()
       await window.keyboard.type(`echo ${token}`)
@@ -112,8 +112,8 @@ test.describe('Workspace Canvas - Persistence', () => {
       await expect(terminal).toBeVisible()
       await expect(terminal.locator('.xterm')).toBeVisible()
 
-      const headToken = `COVE_SCROLLBACK_HEAD_${Date.now()}`
-      const tailToken = `COVE_SCROLLBACK_TAIL_${Date.now()}`
+      const headToken = `OPENCOVE_SCROLLBACK_HEAD_${Date.now()}`
+      const tailToken = `OPENCOVE_SCROLLBACK_TAIL_${Date.now()}`
 
       await terminal.locator('.xterm').click()
       await expect(terminal.locator('.xterm-helper-textarea')).toBeFocused()
@@ -228,14 +228,14 @@ test.describe('Workspace Canvas - Persistence', () => {
       await window.evaluate(() => {
         ;(window as unknown as { __coveTestExitCode?: number | null }).__coveTestExitCode = null
 
-        const unsubscribe = window.coveApi.pty.onExit(event => {
+        const unsubscribe = window.opencoveApi.pty.onExit(event => {
           ;(window as unknown as { __coveTestExitCode?: number | null }).__coveTestExitCode =
             event.exitCode
           unsubscribe()
         })
       })
 
-      const token = `COVE_INACTIVE_EXIT_${Date.now()}`
+      const token = `OPENCOVE_INACTIVE_EXIT_${Date.now()}`
       await terminal.locator('.xterm').click()
       await expect(terminal.locator('.xterm-helper-textarea')).toBeFocused()
       await window.keyboard.type(`sleep 1; echo ${token}; exit`)
@@ -284,7 +284,7 @@ test.describe('Workspace Canvas - Persistence', () => {
       await expect(terminal).toBeVisible()
       await expect(terminal.locator('.xterm')).toBeVisible()
 
-      const token = `COVE_RELOAD_${Date.now()}`
+      const token = `OPENCOVE_RELOAD_${Date.now()}`
       await terminal.locator('.xterm').click()
       await expect(terminal.locator('.xterm-helper-textarea')).toBeFocused()
       await window.keyboard.type(`echo ${token}`)
@@ -298,7 +298,7 @@ test.describe('Workspace Canvas - Persistence', () => {
               async ({ key, nodeId, expected }) => {
                 void key
 
-                const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+                const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
                 if (!raw) {
                   return false
                 }

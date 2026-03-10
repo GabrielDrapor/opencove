@@ -45,7 +45,7 @@ OpenCove 采用：
 
 ### `domain`
 - 放业务规则、不变量、状态模型、值对象、领域服务。
-- 不允许依赖 `React / Electron / CLI / DB / FS / network / window.coveApi`。
+- 不允许依赖 `React / Electron / CLI / DB / FS / network / window.opencoveApi`。
 
 ### `application`
 - 放 usecase、用户意图、跨对象编排、端口定义。
@@ -95,7 +95,7 @@ domain <- application <- presentation
 - 负责 UI 组合、交互绑定、展示状态。
 - 不负责跨边界技术接入与 durable truth 判定。
 
-### `window.coveApi`
+### `window.opencoveApi`
 - 只能出现在边界 adapter。
 - 禁止出现在 `domain / application / renderer presentation`。
 
@@ -137,7 +137,7 @@ domain <- application <- presentation
 
 以下结构视为违规：
 - 在组件或 hook 中堆 `状态判定 + 外部调用 + fallback/retry + 写回`。
-- 在 renderer 业务流程文件里直接调用 `window.coveApi`。
+- 在 renderer 业务流程文件里直接调用 `window.opencoveApi`。
 - 用持久化结构反向定义业务语义。
 - 让非 owner context 判定别人的 durable truth。
 - 通过跨 context 直接写 store/state 传递业务真相。

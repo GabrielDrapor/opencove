@@ -85,7 +85,7 @@ export function WorkspaceSpaceRegionsOverlay({
       return
     }
 
-    const listWorktrees = window.coveApi?.worktree?.listWorktrees
+    const listWorktrees = window.opencoveApi?.worktree?.listWorktrees
     if (typeof listWorktrees !== 'function') {
       setWorktreeInfoByPath(new Map())
       return

@@ -206,7 +206,7 @@ export function normalizeDirectoryPath(workspacePath: string, customDirectory: s
 
 export function toSuggestedWorktreePath(workspacePath: string, provider: AgentProvider): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  return `${workspacePath}/.cove/worktrees/${providerTitlePrefix(provider)}-${stamp}`
+  return `${workspacePath}/.opencove/worktrees/${providerTitlePrefix(provider)}-${stamp}`
 }
 
 export function shouldKeepSpace(space: WorkspaceSpaceState): boolean {

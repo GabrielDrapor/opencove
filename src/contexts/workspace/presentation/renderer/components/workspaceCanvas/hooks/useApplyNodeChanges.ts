@@ -64,7 +64,9 @@ export function useWorkspaceCanvasApplyNodeChanges({
 
           if (node.data.sessionId.length > 0) {
             invalidateCachedTerminalScreenState(node.id, node.data.sessionId)
-            void window.coveApi.pty.kill({ sessionId: node.data.sessionId }).catch(() => undefined)
+            void window.opencoveApi.pty
+              .kill({ sessionId: node.data.sessionId })
+              .catch(() => undefined)
           }
         })
       }

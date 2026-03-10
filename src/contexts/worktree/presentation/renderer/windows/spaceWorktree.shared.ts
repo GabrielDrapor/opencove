@@ -32,16 +32,16 @@ const WORKTREE_API_UNAVAILABLE_ERROR =
   'Worktree API is unavailable. Please restart OpenCove and try again.'
 const DISALLOWED_BRANCH_CHARACTERS = [' ', '~', '^', ':', '?', '*', '[', '\\']
 
-type WorktreeApiClient = Window['coveApi']['worktree']
+type WorktreeApiClient = Window['opencoveApi']['worktree']
 
 export function getWorktreeApiMethod<K extends keyof WorktreeApiClient>(
   method: K,
 ): WorktreeApiClient[K] {
   const worktreeApi = (
     window as Window & {
-      coveApi?: { worktree?: Partial<WorktreeApiClient> }
+      opencoveApi?: { worktree?: Partial<WorktreeApiClient> }
     }
-  ).coveApi?.worktree
+  ).opencoveApi?.worktree
 
   const candidate = worktreeApi?.[method]
   if (typeof candidate !== 'function') {
@@ -58,7 +58,7 @@ export function normalizeComparablePath(pathValue: string): string {
 export function resolveWorktreesRoot(workspacePath: string, worktreesRoot: string): string {
   const trimmed = worktreesRoot.trim()
   if (trimmed.length === 0) {
-    return `${workspacePath.replace(/[\\/]+$/, '')}/.cove/worktrees`
+    return `${workspacePath.replace(/[\\/]+$/, '')}/.opencove/worktrees`
   }
 
   if (/^([a-zA-Z]:[\\/]|\/)/.test(trimmed)) {

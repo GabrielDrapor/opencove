@@ -17,7 +17,7 @@
 1. `syncTerminalSize()` 采用直接链路：
    - `fitAddon.fit()`
    - `terminal.refresh(0, terminal.rows - 1)`
-   - `window.coveApi.pty.resize(...)`
+   - `window.opencoveApi.pty.resize(...)`
 2. `ResizeObserver` 直接调用 `syncTerminalSize()`，不引入额外状态机。
 3. `width/height` 变化通过 `requestAnimationFrame(syncTerminalSize)` 触发。
 4. `visibility/focus/layout-sync` 事件都直接调用 `syncTerminalSize()`。

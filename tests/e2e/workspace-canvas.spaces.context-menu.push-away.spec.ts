@@ -107,7 +107,7 @@ test.describe('Workspace Canvas - Spaces (Push Away)', () => {
             async ({ key }) => {
               void key
 
-              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+              const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return false
               }

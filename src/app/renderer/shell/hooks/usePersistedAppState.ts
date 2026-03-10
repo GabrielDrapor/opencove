@@ -80,7 +80,7 @@ export function usePersistedAppState({
   )
 
   useEffect(() => {
-    if (window.coveApi?.meta?.isTest) {
+    if (window.opencoveApi?.meta?.isTest) {
       return
     }
 

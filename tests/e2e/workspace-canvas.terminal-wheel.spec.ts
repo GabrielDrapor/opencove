@@ -55,9 +55,9 @@ test.describe('Workspace Canvas - Terminal Wheel', () => {
       await xterm.click()
       const terminalInput = terminal.locator('.xterm-helper-textarea')
       await expect(terminalInput).toBeFocused()
-      await window.keyboard.type('for i in $(seq 1 260); do echo COVE_SCROLL_$i; done')
+      await window.keyboard.type('for i in $(seq 1 260); do echo OPENCOVE_SCROLL_$i; done')
       await window.keyboard.press('Enter')
-      await expect(terminal).toContainText('COVE_SCROLL_260')
+      await expect(terminal).toContainText('OPENCOVE_SCROLL_260')
 
       const viewport = terminal.locator('.xterm-viewport')
       await expect(viewport).toBeVisible()

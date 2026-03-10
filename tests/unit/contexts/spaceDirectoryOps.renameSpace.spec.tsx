@@ -58,7 +58,7 @@ describe('useWorkspaceCanvasSpaceDirectoryOps renameSpaceTo', () => {
           <button
             type="button"
             onClick={() => {
-              updateSpaceDirectory('space-1', '/repo/.cove/worktrees/feat-inbox', {
+              updateSpaceDirectory('space-1', '/repo/.opencove/worktrees/feat-inbox', {
                 renameSpaceTo: 'feat/inbox',
               })
             }}
@@ -75,7 +75,7 @@ describe('useWorkspaceCanvasSpaceDirectoryOps renameSpaceTo', () => {
 
     expect(screen.getByTestId('space-name')).toHaveTextContent('feat/inbox')
     expect(screen.getByTestId('space-directory')).toHaveTextContent(
-      '/repo/.cove/worktrees/feat-inbox',
+      '/repo/.opencove/worktrees/feat-inbox',
     )
     expect(closeNode).not.toHaveBeenCalled()
     expect(onRequestPersistFlush).toHaveBeenCalledTimes(1)

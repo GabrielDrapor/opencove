@@ -11,7 +11,7 @@ vi.mock('@xyflow/react', () => {
 
 describe('WorkspaceSpaceRegionsOverlay space actions', () => {
   afterEach(() => {
-    delete (window as unknown as { coveApi?: unknown }).coveApi
+    delete (window as unknown as { opencoveApi?: unknown }).opencoveApi
   })
 
   it('opens the space action menu via the ... pill', () => {
@@ -58,7 +58,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
       return {
         worktrees: [
           {
-            path: '/tmp/repo/.cove/worktrees/wt-infra',
+            path: '/tmp/repo/.opencove/worktrees/wt-infra',
             head: '69a0358e3f7d88f1d8af8ff302d8b69bcd1b4d45',
             branch: 'feat/infra-pill',
           },
@@ -66,7 +66,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
       }
     })
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -84,7 +84,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
           {
             id: 'space-1',
             name: 'Infra',
-            directoryPath: '/tmp/repo/.cove/worktrees/wt-infra',
+            directoryPath: '/tmp/repo/.opencove/worktrees/wt-infra',
             rect: { x: 0, y: 0, width: 200, height: 160 },
             hasExplicitRect: true,
           },
@@ -121,7 +121,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
       return {
         worktrees: [
           {
-            path: '/tmp/repo/.cove/worktrees/wt-infra',
+            path: '/tmp/repo/.opencove/worktrees/wt-infra',
             head: '69a0358e3f7d88f1d8af8ff302d8b69bcd1b4d45',
             branch: branchName,
           },
@@ -132,7 +132,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
       branchName = nextName
     })
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -150,7 +150,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
           {
             id: 'space-1',
             name: 'Infra',
-            directoryPath: '/tmp/repo/.cove/worktrees/wt-infra',
+            directoryPath: '/tmp/repo/.opencove/worktrees/wt-infra',
             rect: { x: 0, y: 0, width: 200, height: 160 },
             hasExplicitRect: true,
           },
@@ -179,7 +179,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
     await waitFor(() => {
       expect(renameBranch).toHaveBeenCalledWith({
         repoPath: '/tmp/repo',
-        worktreePath: '/tmp/repo/.cove/worktrees/wt-infra',
+        worktreePath: '/tmp/repo/.opencove/worktrees/wt-infra',
         currentName: 'feat/infra-pill',
         nextName: 'feat/infra-next',
       })
@@ -195,7 +195,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
   it('validates unsupported branch names before renaming', async () => {
     const renameBranch = vi.fn(async () => undefined)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -203,7 +203,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
           listWorktrees: vi.fn(async () => ({
             worktrees: [
               {
-                path: '/tmp/repo/.cove/worktrees/wt-infra',
+                path: '/tmp/repo/.opencove/worktrees/wt-infra',
                 head: '69a0358e3f7d88f1d8af8ff302d8b69bcd1b4d45',
                 branch: 'feat/infra-pill',
               },
@@ -221,7 +221,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
           {
             id: 'space-1',
             name: 'Infra',
-            directoryPath: '/tmp/repo/.cove/worktrees/wt-infra',
+            directoryPath: '/tmp/repo/.opencove/worktrees/wt-infra',
             rect: { x: 0, y: 0, width: 200, height: 160 },
             hasExplicitRect: true,
           },
@@ -258,7 +258,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
       .mockImplementation(() => undefined)
 
     try {
-      Object.defineProperty(window, 'coveApi', {
+      Object.defineProperty(window, 'opencoveApi', {
         configurable: true,
         writable: true,
         value: {
@@ -266,7 +266,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
             listWorktrees: vi.fn(async () => ({
               worktrees: [
                 {
-                  path: '/tmp/repo/.cove/worktrees/wt-infra',
+                  path: '/tmp/repo/.opencove/worktrees/wt-infra',
                   head: '69a0358e3f7d88f1d8af8ff302d8b69bcd1b4d45',
                   branch: 'feat/infra-pill',
                 },
@@ -284,7 +284,7 @@ describe('WorkspaceSpaceRegionsOverlay space actions', () => {
             {
               id: 'space-1',
               name: 'Infra',
-              directoryPath: '/tmp/repo/.cove/worktrees/wt-infra',
+              directoryPath: '/tmp/repo/.opencove/worktrees/wt-infra',
               rect: { x: 0, y: 0, width: 200, height: 160 },
               hasExplicitRect: true,
             },

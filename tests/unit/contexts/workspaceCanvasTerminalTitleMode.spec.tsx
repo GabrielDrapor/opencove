@@ -125,7 +125,7 @@ describe('WorkspaceCanvas terminal title mode', () => {
     const kill = vi.fn(async () => undefined)
     const onExit = vi.fn(() => () => undefined)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

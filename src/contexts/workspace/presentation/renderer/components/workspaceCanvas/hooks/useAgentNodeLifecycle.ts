@@ -93,7 +93,7 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
       const launchToken = bumpAgentLaunchToken(nodeId)
 
       if (launchData.shouldCreateDirectory && launchData.directoryMode === 'custom') {
-        await window.coveApi.workspace.ensureDirectory({ path: launchData.executionDirectory })
+        await window.opencoveApi.workspace.ensureDirectory({ path: launchData.executionDirectory })
 
         if (!isAgentLaunchTokenCurrent(nodeId, launchToken)) {
           return
@@ -102,7 +102,7 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
 
       if (node.data.sessionId.length > 0) {
         invalidateCachedTerminalScreenState(nodeId, node.data.sessionId)
-        await window.coveApi.pty.kill({ sessionId: node.data.sessionId })
+        await window.opencoveApi.pty.kill({ sessionId: node.data.sessionId })
 
         if (!isAgentLaunchTokenCurrent(nodeId, launchToken)) {
           return
@@ -141,7 +141,7 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
       )
 
       try {
-        const launched = await window.coveApi.agent.launch({
+        const launched = await window.opencoveApi.agent.launch({
           provider: launchData.provider,
           cwd: launchData.executionDirectory,
           prompt: launchData.prompt,
@@ -154,12 +154,12 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
         })
 
         if (!isAgentLaunchTokenCurrent(nodeId, launchToken)) {
-          void window.coveApi.pty.kill({ sessionId: launched.sessionId }).catch(() => undefined)
+          void window.opencoveApi.pty.kill({ sessionId: launched.sessionId }).catch(() => undefined)
           return
         }
 
         if (!nodesRef.current.some(item => item.id === nodeId)) {
-          void window.coveApi.pty.kill({ sessionId: launched.sessionId }).catch(() => undefined)
+          void window.opencoveApi.pty.kill({ sessionId: launched.sessionId }).catch(() => undefined)
           return
         }
 
@@ -246,7 +246,7 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
 
       if (node.data.sessionId.length > 0) {
         invalidateCachedTerminalScreenState(nodeId, node.data.sessionId)
-        await window.coveApi.pty.kill({ sessionId: node.data.sessionId })
+        await window.opencoveApi.pty.kill({ sessionId: node.data.sessionId })
       }
 
       setNodes(prevNodes =>

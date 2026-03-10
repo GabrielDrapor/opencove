@@ -261,7 +261,7 @@ export function useWorkspaceCanvasTaskActions({
       const provider = resolveTaskTitleProvider(agentSettings)
       const model = resolveTaskTitleModel(agentSettings)
 
-      const suggested = await window.coveApi.task.suggestTitle({
+      const suggested = await window.opencoveApi.task.suggestTitle({
         provider,
         cwd: workspacePath,
         requirement,

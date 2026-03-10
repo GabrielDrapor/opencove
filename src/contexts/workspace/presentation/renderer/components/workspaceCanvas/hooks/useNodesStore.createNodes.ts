@@ -56,7 +56,7 @@ export function useWorkspaceCanvasNodeCreation({
       })
 
       if (canPlace !== true) {
-        await window.coveApi.pty.kill({ sessionId })
+        await window.opencoveApi.pty.kill({ sessionId })
         onShowMessage?.('当前视图附近没有可用空位，请先移动或关闭部分终端窗口。', 'warning')
         return null
       }

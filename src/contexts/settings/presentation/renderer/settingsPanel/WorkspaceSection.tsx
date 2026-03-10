@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 function resolveWorktreesRoot(workspacePath: string, worktreesRoot: string): string {
   const trimmed = worktreesRoot.trim()
   if (trimmed.length === 0) {
-    return `${workspacePath.replace(/[/]+$/, '')}/.cove/worktrees`
+    return `${workspacePath.replace(/[/]+$/, '')}/.opencove/worktrees`
   }
   if (/^([a-zA-Z]:[/]|\/)/.test(trimmed)) {
     return trimmed.replace(/[/]+$/, '')
@@ -118,7 +118,7 @@ export function WorkspaceSection({
               <input
                 data-testid="settings-worktree-root"
                 value={worktreesRoot}
-                placeholder=".cove/worktrees"
+                placeholder=".opencove/worktrees"
                 onChange={event => onChangeWorktreesRoot(event.target.value)}
               />
               <button

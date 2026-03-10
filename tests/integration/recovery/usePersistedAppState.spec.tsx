@@ -47,7 +47,7 @@ describe('usePersistedAppState', () => {
     schedulePersistedStateWrite.mockReset()
     flushScheduledNodeScrollbackWrites.mockReset()
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: { meta: { isTest: false } },

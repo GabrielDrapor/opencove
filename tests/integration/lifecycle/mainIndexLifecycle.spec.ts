@@ -98,10 +98,10 @@ describe('main process lifecycle', () => {
   it('shows window without focusing during E2E no-focus mode', async () => {
     vi.resetModules()
 
-    const previousNoFocus = process.env['COVE_E2E_NO_FOCUS']
-    const previousWindowMode = process.env['COVE_E2E_WINDOW_MODE']
+    const previousNoFocus = process.env['OPENCOVE_E2E_NO_FOCUS']
+    const previousWindowMode = process.env['OPENCOVE_E2E_WINDOW_MODE']
     const previousNodeEnv = process.env['NODE_ENV']
-    process.env['COVE_E2E_NO_FOCUS'] = '1'
+    process.env['OPENCOVE_E2E_NO_FOCUS'] = '1'
     process.env['NODE_ENV'] = 'test'
 
     try {
@@ -193,15 +193,15 @@ describe('main process lifecycle', () => {
       expect(dispose).toHaveBeenCalledTimes(1)
     } finally {
       if (previousNoFocus === undefined) {
-        delete process.env['COVE_E2E_NO_FOCUS']
+        delete process.env['OPENCOVE_E2E_NO_FOCUS']
       } else {
-        process.env['COVE_E2E_NO_FOCUS'] = previousNoFocus
+        process.env['OPENCOVE_E2E_NO_FOCUS'] = previousNoFocus
       }
 
       if (previousWindowMode === undefined) {
-        delete process.env['COVE_E2E_WINDOW_MODE']
+        delete process.env['OPENCOVE_E2E_WINDOW_MODE']
       } else {
-        process.env['COVE_E2E_WINDOW_MODE'] = previousWindowMode
+        process.env['OPENCOVE_E2E_WINDOW_MODE'] = previousWindowMode
       }
 
       if (previousNodeEnv === undefined) {
@@ -215,11 +215,11 @@ describe('main process lifecycle', () => {
   it('keeps E2E window hidden for visual regression mode', async () => {
     vi.resetModules()
 
-    const previousNoFocus = process.env['COVE_E2E_NO_FOCUS']
-    const previousWindowMode = process.env['COVE_E2E_WINDOW_MODE']
+    const previousNoFocus = process.env['OPENCOVE_E2E_NO_FOCUS']
+    const previousWindowMode = process.env['OPENCOVE_E2E_WINDOW_MODE']
     const previousNodeEnv = process.env['NODE_ENV']
-    delete process.env['COVE_E2E_NO_FOCUS']
-    process.env['COVE_E2E_WINDOW_MODE'] = 'hidden'
+    delete process.env['OPENCOVE_E2E_NO_FOCUS']
+    process.env['OPENCOVE_E2E_WINDOW_MODE'] = 'hidden'
     process.env['NODE_ENV'] = 'test'
 
     try {
@@ -314,15 +314,15 @@ describe('main process lifecycle', () => {
       expect(dispose).toHaveBeenCalledTimes(1)
     } finally {
       if (previousNoFocus === undefined) {
-        delete process.env['COVE_E2E_NO_FOCUS']
+        delete process.env['OPENCOVE_E2E_NO_FOCUS']
       } else {
-        process.env['COVE_E2E_NO_FOCUS'] = previousNoFocus
+        process.env['OPENCOVE_E2E_NO_FOCUS'] = previousNoFocus
       }
 
       if (previousWindowMode === undefined) {
-        delete process.env['COVE_E2E_WINDOW_MODE']
+        delete process.env['OPENCOVE_E2E_WINDOW_MODE']
       } else {
-        process.env['COVE_E2E_WINDOW_MODE'] = previousWindowMode
+        process.env['OPENCOVE_E2E_WINDOW_MODE'] = previousWindowMode
       }
 
       if (previousNodeEnv === undefined) {
@@ -336,11 +336,11 @@ describe('main process lifecycle', () => {
   it('shows E2E window in offscreen inactive mode', async () => {
     vi.resetModules()
 
-    const previousNoFocus = process.env['COVE_E2E_NO_FOCUS']
-    const previousWindowMode = process.env['COVE_E2E_WINDOW_MODE']
+    const previousNoFocus = process.env['OPENCOVE_E2E_NO_FOCUS']
+    const previousWindowMode = process.env['OPENCOVE_E2E_WINDOW_MODE']
     const previousNodeEnv = process.env['NODE_ENV']
-    delete process.env['COVE_E2E_NO_FOCUS']
-    process.env['COVE_E2E_WINDOW_MODE'] = 'offscreen'
+    delete process.env['OPENCOVE_E2E_NO_FOCUS']
+    process.env['OPENCOVE_E2E_WINDOW_MODE'] = 'offscreen'
     process.env['NODE_ENV'] = 'test'
 
     try {
@@ -438,15 +438,15 @@ describe('main process lifecycle', () => {
       expect(dispose).toHaveBeenCalledTimes(1)
     } finally {
       if (previousNoFocus === undefined) {
-        delete process.env['COVE_E2E_NO_FOCUS']
+        delete process.env['OPENCOVE_E2E_NO_FOCUS']
       } else {
-        process.env['COVE_E2E_NO_FOCUS'] = previousNoFocus
+        process.env['OPENCOVE_E2E_NO_FOCUS'] = previousNoFocus
       }
 
       if (previousWindowMode === undefined) {
-        delete process.env['COVE_E2E_WINDOW_MODE']
+        delete process.env['OPENCOVE_E2E_WINDOW_MODE']
       } else {
-        process.env['COVE_E2E_WINDOW_MODE'] = previousWindowMode
+        process.env['OPENCOVE_E2E_WINDOW_MODE'] = previousWindowMode
       }
 
       if (previousNodeEnv === undefined) {

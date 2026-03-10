@@ -54,7 +54,7 @@ export function syncTerminalNodeSize({
 
   lastSyncedPtySizeRef.current = nextPtySize
 
-  void window.coveApi.pty.resize({
+  void window.opencoveApi.pty.resize({
     sessionId,
     cols: nextPtySize.cols,
     rows: nextPtySize.rows,

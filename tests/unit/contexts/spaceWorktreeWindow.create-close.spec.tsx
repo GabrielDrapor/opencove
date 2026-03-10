@@ -36,7 +36,7 @@ describe('SpaceWorktreeWindow create flow', () => {
     }))
     const create = vi.fn(async () => ({
       worktree: {
-        path: '/repo/.cove/worktrees/space-demo--1a2b3c4d',
+        path: '/repo/.opencove/worktrees/space-demo--1a2b3c4d',
         head: null,
         branch: 'space/demo',
       },
@@ -44,7 +44,7 @@ describe('SpaceWorktreeWindow create flow', () => {
     const onClose = vi.fn()
     const onUpdateSpaceDirectory = vi.fn()
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -72,7 +72,7 @@ describe('SpaceWorktreeWindow create flow', () => {
         spaces={createSpaces('/repo')}
         nodes={createNodes()}
         workspacePath="/repo"
-        worktreesRoot=".cove/worktrees"
+        worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={onClose}
         onUpdateSpaceDirectory={onUpdateSpaceDirectory}
@@ -98,12 +98,12 @@ describe('SpaceWorktreeWindow create flow', () => {
     await waitFor(() => {
       expect(create).toHaveBeenCalledWith({
         repoPath: '/repo',
-        worktreesRoot: '/repo/.cove/worktrees',
+        worktreesRoot: '/repo/.opencove/worktrees',
         branchMode: { kind: 'new', name: 'space/demo', startPoint: 'main' },
       })
       expect(onUpdateSpaceDirectory).toHaveBeenCalledWith(
         'space-1',
-        '/repo/.cove/worktrees/space-demo--1a2b3c4d',
+        '/repo/.opencove/worktrees/space-demo--1a2b3c4d',
         { renameSpaceTo: 'space/demo' },
       )
       expect(onClose).toHaveBeenCalledTimes(1)

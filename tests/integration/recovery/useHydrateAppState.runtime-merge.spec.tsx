@@ -102,7 +102,7 @@ describe('useHydrateAppState runtime field merge', () => {
     const spawn = vi.fn(() => terminalSpawnDeferred.promise)
     const launch = vi.fn(() => agentLaunchDeferred.promise)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

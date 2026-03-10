@@ -45,7 +45,7 @@ import type {
 
 type UnsubscribeFn = () => void
 
-export interface CoveApi {
+export interface OpenCoveApi {
   meta: {
     isTest: boolean
   }
@@ -99,6 +99,6 @@ export interface CoveApi {
 
 declare global {
   interface Window {
-    coveApi: CoveApi
+    opencoveApi: OpenCoveApi
   }
 }

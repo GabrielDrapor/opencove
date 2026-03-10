@@ -134,7 +134,7 @@ describe('TerminalNode hydration buffering', () => {
     let dataListener: ((event: DataEvent) => void) | null = null
     let exitListener: ((event: ExitEvent) => void) | null = null
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -191,12 +191,12 @@ describe('TerminalNode hydration buffering', () => {
     expect(container.querySelector('.terminal-node__terminal')).toHaveClass(
       'terminal-node__terminal--hydrating',
     )
-    expect(window.coveApi.pty.snapshot).not.toHaveBeenCalled()
+    expect(window.opencoveApi.pty.snapshot).not.toHaveBeenCalled()
 
     attachDeferred.resolve()
 
     await waitFor(() => {
-      expect(window.coveApi.pty.snapshot).toHaveBeenCalledTimes(1)
+      expect(window.opencoveApi.pty.snapshot).toHaveBeenCalledTimes(1)
     })
 
     dataListener?.({ sessionId: 'session-1', data: 'lo!!' })
@@ -242,7 +242,7 @@ describe('TerminalNode hydration buffering', () => {
       rows: 28,
     })
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

@@ -164,7 +164,7 @@ export function usePtyWorkspaceRuntimeSync({
   }, [activeWorkspaceId])
 
   useEffect(() => {
-    const unsubscribeState = window.coveApi.pty.onState(event => {
+    const unsubscribeState = window.opencoveApi.pty.onState(event => {
       let didChange = false
 
       setWorkspaces(previous => {
@@ -195,7 +195,7 @@ export function usePtyWorkspaceRuntimeSync({
       }
     })
 
-    const unsubscribeMetadata = window.coveApi.pty.onMetadata(event => {
+    const unsubscribeMetadata = window.opencoveApi.pty.onMetadata(event => {
       const nextResumeSessionId = normalizeResumeSessionId(event.resumeSessionId)
       if (!nextResumeSessionId) {
         return
@@ -244,7 +244,7 @@ export function usePtyWorkspaceRuntimeSync({
       }
     })
 
-    const unsubscribeExit = window.coveApi.pty.onExit(event => {
+    const unsubscribeExit = window.opencoveApi.pty.onExit(event => {
       let didChange = false
       const now = new Date().toISOString()
 

@@ -141,7 +141,7 @@ export async function hydrateRuntimeNode({
   }
 
   try {
-    const spawned = await window.coveApi.pty.spawn({
+    const spawned = await window.opencoveApi.pty.spawn({
       cwd: resolveTerminalHydrationCwd(node, workspacePath),
       cols: 80,
       rows: 24,

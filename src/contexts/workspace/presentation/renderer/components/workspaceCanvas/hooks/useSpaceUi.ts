@@ -132,7 +132,7 @@ export function useWorkspaceCanvasSpaceUi({
 
   const openSpaceActionMenu = useCallback(
     (spaceId: string, anchor: { x: number; y: number }) => {
-      const listPathOpeners = window.coveApi?.workspace?.listPathOpeners
+      const listPathOpeners = window.opencoveApi?.workspace?.listPathOpeners
       if (typeof listPathOpeners === 'function') {
         void listPathOpeners()
           .then(result => {
@@ -157,7 +157,7 @@ export function useWorkspaceCanvasSpaceUi({
 
   const copySpacePath = useCallback(
     async (spaceId: string) => {
-      const copyPath = window.coveApi?.workspace?.copyPath
+      const copyPath = window.opencoveApi?.workspace?.copyPath
       if (typeof copyPath !== 'function') {
         return
       }
@@ -169,7 +169,7 @@ export function useWorkspaceCanvasSpaceUi({
 
   const openSpacePath = useCallback(
     async (spaceId: string, openerId: WorkspacePathOpenerId) => {
-      const openPath = window.coveApi?.workspace?.openPath
+      const openPath = window.opencoveApi?.workspace?.openPath
       if (typeof openPath !== 'function') {
         return
       }

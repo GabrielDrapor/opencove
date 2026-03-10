@@ -123,7 +123,7 @@ describe('WorkspaceCanvas task creation async enrichment', () => {
         }),
     )
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

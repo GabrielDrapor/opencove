@@ -48,7 +48,7 @@ import type {
 type UnsubscribeFn = () => void
 
 // Custom APIs for renderer
-const coveApi = {
+const opencoveApi = {
   meta: {
     isTest: process.env.NODE_ENV === 'test',
   },
@@ -175,8 +175,8 @@ const coveApi = {
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
 if (process.contextIsolated) {
-  contextBridge.exposeInMainWorld('coveApi', coveApi)
+  contextBridge.exposeInMainWorld('opencoveApi', opencoveApi)
 } else {
   // @ts-ignore (define in dts)
-  window.coveApi = coveApi
+  window.opencoveApi = opencoveApi
 }

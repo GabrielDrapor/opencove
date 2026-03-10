@@ -24,7 +24,7 @@ describe('PersistenceStore', () => {
     vi.setSystemTime(new Date('2026-02-28T00:00:00.000Z'))
 
     tempDir = await mkdtemp(join(tmpdir(), 'cove-persist-'))
-    const dbPath = join(tempDir, 'cove.db')
+    const dbPath = join(tempDir, 'opencove.db')
     await writeFile(dbPath, 'legacy-db')
 
     type MockDbState = { userVersion: number }
@@ -83,7 +83,7 @@ describe('PersistenceStore', () => {
     store.dispose()
 
     const files = await readdir(tempDir)
-    const backupFiles = files.filter(name => name.startsWith('cove.db.bak-'))
+    const backupFiles = files.filter(name => name.startsWith('opencove.db.bak-'))
     expect(backupFiles).toHaveLength(1)
 
     const backupContent = await readFile(join(tempDir, backupFiles[0] as string), 'utf8')
@@ -95,7 +95,7 @@ describe('PersistenceStore', () => {
     vi.setSystemTime(new Date('2026-02-28T00:00:00.000Z'))
 
     tempDir = await mkdtemp(join(tmpdir(), 'cove-persist-'))
-    const dbPath = join(tempDir, 'cove.db')
+    const dbPath = join(tempDir, 'opencove.db')
     await writeFile(dbPath, 'corrupt-db')
 
     let openAttempts = 0
@@ -136,9 +136,9 @@ describe('PersistenceStore', () => {
     store.dispose()
 
     const files = await readdir(tempDir)
-    expect(files).toContain('cove.db.corrupt-2026-02-28T00-00-00-000Z')
-    expect(await readFile(join(tempDir, 'cove.db.corrupt-2026-02-28T00-00-00-000Z'), 'utf8')).toBe(
-      'corrupt-db',
-    )
+    expect(files).toContain('opencove.db.corrupt-2026-02-28T00-00-00-000Z')
+    expect(
+      await readFile(join(tempDir, 'opencove.db.corrupt-2026-02-28T00-00-00-000Z'), 'utf8'),
+    ).toBe('corrupt-db')
   })
 })

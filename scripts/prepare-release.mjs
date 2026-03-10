@@ -89,7 +89,9 @@ function updateChangelog(changelog, nextVersion, releaseDate) {
 }
 
 function printUsage() {
-  console.error('Usage: node scripts/prepare-release.mjs <patch|minor|major|x.y.z> [--dry-run]')
+  process.stderr.write(
+    'Usage: node scripts/prepare-release.mjs <patch|minor|major|x.y.z> [--dry-run]\n',
+  )
 }
 
 if (!rawTarget) {
@@ -129,14 +131,19 @@ if (!rawTarget) {
     }
 
     const actionLabel = dryRun ? 'Dry run' : 'Prepared'
-    console.log(`${actionLabel} release ${currentVersionString} -> ${nextVersion}`)
-    console.log(`- package.json version: ${nextVersion}`)
-    console.log(`- changelog section: ## [${nextVersion}] - ${releaseDate}`)
-    console.log('')
-    console.log('Next steps:')
-    console.log('1. Fill in the new CHANGELOG section.')
-    console.log('2. Run `pnpm pre-commit`.')
-    console.log(`3. Commit the release prep, then tag with \`git tag v${nextVersion}\`.`)
-    console.log('4. Push `main` and the new tag to trigger the GitHub Release workflow.')
+    process.stdout.write(
+      [
+        `${actionLabel} release ${currentVersionString} -> ${nextVersion}`,
+        `- package.json version: ${nextVersion}`,
+        `- changelog section: ## [${nextVersion}] - ${releaseDate}`,
+        '',
+        'Next steps:',
+        '1. Fill in the new CHANGELOG section.',
+        '2. Run `pnpm pre-commit`.',
+        `3. Commit the release prep, then tag with \`git tag v${nextVersion}\`.`,
+        '4. Push `main` and the new tag to trigger the GitHub Release workflow.',
+        '',
+      ].join('\n'),
+    )
   }
 }

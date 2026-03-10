@@ -29,7 +29,7 @@ function createIpcPort(): PersistencePort | null {
     return null
   }
 
-  const persistenceApi = window.coveApi?.persistence
+  const persistenceApi = window.opencoveApi?.persistence
   if (!persistenceApi) {
     return null
   }

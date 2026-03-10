@@ -135,7 +135,7 @@ export async function runTaskAgentAction(
   const model = resolveAgentModel(context.agentSettings, provider)
 
   try {
-    const launched = await window.coveApi.agent.launch({
+    const launched = await window.opencoveApi.agent.launch({
       provider,
       cwd: taskDirectory,
       prompt: requirement,

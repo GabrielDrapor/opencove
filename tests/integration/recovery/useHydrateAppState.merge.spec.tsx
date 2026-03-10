@@ -60,7 +60,7 @@ describe('useHydrateAppState merge behavior', () => {
     const spawnDeferred = createDeferred<{ sessionId: string }>()
     const spawn = vi.fn(() => spawnDeferred.promise)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -244,7 +244,7 @@ describe('useHydrateAppState merge behavior', () => {
       .mockImplementationOnce(() => spawnDeferred1.promise)
       .mockImplementationOnce(() => spawnDeferred2.promise)
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

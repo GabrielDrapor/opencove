@@ -11,8 +11,8 @@ describe('TerminalNodeHeader directory mismatch badge', () => {
         kind="agent"
         status="running"
         directoryMismatch={{
-          executionDirectory: '/repo/.cove/worktrees/a',
-          expectedDirectory: '/repo/.cove/worktrees/b',
+          executionDirectory: '/repo/.opencove/worktrees/a',
+          expectedDirectory: '/repo/.opencove/worktrees/b',
         }}
         onClose={() => undefined}
       />,
@@ -28,8 +28,8 @@ describe('TerminalNodeHeader directory mismatch badge', () => {
         kind="terminal"
         status={null}
         directoryMismatch={{
-          executionDirectory: '/repo/.cove/worktrees/a',
-          expectedDirectory: '/repo/.cove/worktrees/b',
+          executionDirectory: '/repo/.opencove/worktrees/a',
+          expectedDirectory: '/repo/.opencove/worktrees/b',
         }}
         onClose={() => undefined}
       />,

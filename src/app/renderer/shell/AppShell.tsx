@@ -114,7 +114,7 @@ export default function App(): React.JSX.Element {
     resolveAgentModel(agentSettings, agentSettings.defaultProvider) ?? 'Default (Follow CLI)'
 
   const handleAddWorkspace = useCallback(async (): Promise<void> => {
-    const selected = await window.coveApi.workspace.selectDirectory()
+    const selected = await window.opencoveApi.workspace.selectDirectory()
     if (!selected) {
       return
     }
@@ -328,7 +328,7 @@ export default function App(): React.JSX.Element {
         targetWorkspace.nodes
           .map(node => node.data.sessionId)
           .filter(sessionId => sessionId.length > 0)
-          .map(sessionId => window.coveApi.pty.kill({ sessionId })),
+          .map(sessionId => window.opencoveApi.pty.kill({ sessionId })),
       )
 
       const nextWorkspaces = useAppStore

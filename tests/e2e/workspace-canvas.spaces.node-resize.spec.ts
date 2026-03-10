@@ -109,7 +109,7 @@ test.describe('Workspace Canvas - Spaces (Node Resize)', () => {
               async ({ key, maxWidth, maxHeight }) => {
                 void key
 
-                const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+                const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
                 if (!raw) {
                   return null
                 }

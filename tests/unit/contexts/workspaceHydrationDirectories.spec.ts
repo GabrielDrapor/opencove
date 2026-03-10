@@ -41,7 +41,7 @@ function createTerminalNode(overrides?: Partial<TerminalNodeData>): Node<Termina
 
 describe('workspace hydration directories', () => {
   afterEach(() => {
-    delete (window as unknown as { coveApi?: unknown }).coveApi
+    delete (window as unknown as { opencoveApi?: unknown }).opencoveApi
   })
 
   it('preserves terminal directory bindings when converting persisted nodes to runtime nodes', () => {
@@ -49,7 +49,7 @@ describe('workspace hydration directories', () => {
       id: 'workspace-1',
       name: 'repo',
       path: '/repo',
-      worktreesRoot: '.cove/worktrees',
+      worktreesRoot: '.opencove/worktrees',
       viewport: { x: 0, y: 0, zoom: 1 },
       isMinimapVisible: true,
       spaces: [],
@@ -68,8 +68,8 @@ describe('workspace hydration directories', () => {
           exitCode: null,
           lastError: null,
           scrollback: null,
-          executionDirectory: '/repo/.cove/worktrees/space-1',
-          expectedDirectory: '/repo/.cove/worktrees/space-1',
+          executionDirectory: '/repo/.opencove/worktrees/space-1',
+          expectedDirectory: '/repo/.opencove/worktrees/space-1',
           agent: null,
           task: null,
         },
@@ -78,14 +78,14 @@ describe('workspace hydration directories', () => {
 
     const [node] = toRuntimeNodes(workspace)
 
-    expect(node?.data.executionDirectory).toBe('/repo/.cove/worktrees/space-1')
-    expect(node?.data.expectedDirectory).toBe('/repo/.cove/worktrees/space-1')
+    expect(node?.data.executionDirectory).toBe('/repo/.opencove/worktrees/space-1')
+    expect(node?.data.expectedDirectory).toBe('/repo/.opencove/worktrees/space-1')
   })
 
   it('restores terminal sessions in their bound execution directory', async () => {
     const spawn = vi.fn(async () => ({ sessionId: 'restored-session-1' }))
 
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {
@@ -96,8 +96,8 @@ describe('workspace hydration directories', () => {
     })
 
     const node = createTerminalNode({
-      executionDirectory: '/repo/.cove/worktrees/space-1',
-      expectedDirectory: '/repo/.cove/worktrees/space-1',
+      executionDirectory: '/repo/.opencove/worktrees/space-1',
+      expectedDirectory: '/repo/.opencove/worktrees/space-1',
     })
 
     const hydrated = await hydrateRuntimeNode({
@@ -107,7 +107,7 @@ describe('workspace hydration directories', () => {
     })
 
     expect(spawn).toHaveBeenCalledWith({
-      cwd: '/repo/.cove/worktrees/space-1',
+      cwd: '/repo/.opencove/worktrees/space-1',
       cols: 80,
       rows: 24,
     })

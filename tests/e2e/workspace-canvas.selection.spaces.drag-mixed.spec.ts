@@ -56,7 +56,7 @@ test.describe('Workspace Canvas - Selection (Spaces)', () => {
           async ({ key, insideId, outsideId }) => {
             void key
 
-            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+            const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return null
             }
@@ -285,7 +285,7 @@ test.describe('Workspace Canvas - Selection (Spaces)', () => {
           async ({ key, spaceId, insideId, outsideId }) => {
             void key
 
-            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+            const raw = await window.opencoveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return null
             }

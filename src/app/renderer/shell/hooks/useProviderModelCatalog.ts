@@ -45,7 +45,7 @@ export function useProviderModelCatalog({ isSettingsOpen }: { isSettingsOpen: bo
     }))
 
     try {
-      const result = await window.coveApi.agent.listModels({ provider })
+      const result = await window.opencoveApi.agent.listModels({ provider })
 
       if (!providerModelsRequestStoreRef.current.isLatest(provider, requestToken)) {
         return

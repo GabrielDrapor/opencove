@@ -68,7 +68,7 @@ vi.mock('../../../src/contexts/workspace/presentation/renderer/components/TaskNo
 
 describe('WorkspaceCanvas keyboard focus behavior', () => {
   it('disables built-in React Flow shift selection shortcuts', async () => {
-    Object.defineProperty(window, 'coveApi', {
+    Object.defineProperty(window, 'opencoveApi', {
       configurable: true,
       writable: true,
       value: {

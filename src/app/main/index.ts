@@ -7,28 +7,28 @@ import { hydrateCliPathForPackagedApp } from '../../platform/os/CliEnvironment'
 import { registerIpcHandlers } from './ipc/registerIpcHandlers'
 
 let ipcDisposable: ReturnType<typeof registerIpcHandlers> | null = null
-const LEGACY_USER_DATA_DIRECTORY_NAME = 'cove'
+const APP_USER_DATA_DIRECTORY_NAME = 'opencove'
 const OPENCOVE_APP_USER_MODEL_ID = 'dev.deadwave.opencove'
 
-function preserveLegacyUserDataPath(): void {
+function preserveCanonicalUserDataPath(): void {
   const appDataPath = app.getPath('appData')
-  app.setPath('userData', resolve(appDataPath, LEGACY_USER_DATA_DIRECTORY_NAME))
+  app.setPath('userData', resolve(appDataPath, APP_USER_DATA_DIRECTORY_NAME))
 }
 
 if (process.env.NODE_ENV !== 'test') {
-  preserveLegacyUserDataPath()
+  preserveCanonicalUserDataPath()
 }
 
-if (process.env.NODE_ENV === 'test' && process.env['COVE_TEST_USER_DATA_DIR']) {
-  app.setPath('userData', resolve(process.env['COVE_TEST_USER_DATA_DIR']))
+if (process.env.NODE_ENV === 'test' && process.env['OPENCOVE_TEST_USER_DATA_DIR']) {
+  app.setPath('userData', resolve(process.env['OPENCOVE_TEST_USER_DATA_DIR']))
 } else if (app.isPackaged === false) {
   const wantsSharedUserData =
-    isTruthyEnv(process.env['COVE_DEV_USE_SHARED_USER_DATA']) ||
-    process.argv.includes('--cove-shared-user-data') ||
+    isTruthyEnv(process.env['OPENCOVE_DEV_USE_SHARED_USER_DATA']) ||
+    process.argv.includes('--opencove-shared-user-data') ||
     process.argv.includes('--shared-user-data')
 
   if (!wantsSharedUserData) {
-    const explicitDevUserDataDir = process.env['COVE_DEV_USER_DATA_DIR']
+    const explicitDevUserDataDir = process.env['OPENCOVE_DEV_USER_DATA_DIR']
     const defaultUserDataDir = app.getPath('userData')
     const devUserDataDir = explicitDevUserDataDir
       ? resolve(explicitDevUserDataDir)
@@ -157,13 +157,13 @@ function resolveE2EWindowMode(): E2EWindowMode {
     return 'normal'
   }
 
-  const explicitMode = parseE2EWindowMode(process.env['COVE_E2E_WINDOW_MODE'])
+  const explicitMode = parseE2EWindowMode(process.env['OPENCOVE_E2E_WINDOW_MODE'])
   if (explicitMode) {
     return explicitMode
   }
 
-  // Backward compatibility: keep honoring old no-focus flag.
-  if (isTruthyEnv(process.env['COVE_E2E_NO_FOCUS'])) {
+  // Keep honoring the legacy no-focus behavior flag alongside window modes.
+  if (isTruthyEnv(process.env['OPENCOVE_E2E_NO_FOCUS'])) {
     return 'inactive'
   }
 

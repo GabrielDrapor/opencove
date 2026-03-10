@@ -59,8 +59,8 @@ export function resolveAgentTestStub(
     return null
   }
 
-  const sessionScenario = process.env['COVE_TEST_AGENT_SESSION_SCENARIO']?.trim() ?? ''
-  const stubScriptPath = process.env['COVE_TEST_AGENT_STUB_SCRIPT']?.trim() ?? ''
+  const sessionScenario = process.env['OPENCOVE_TEST_AGENT_SESSION_SCENARIO']?.trim() ?? ''
+  const stubScriptPath = process.env['OPENCOVE_TEST_AGENT_STUB_SCRIPT']?.trim() ?? ''
 
   if (sessionScenario.length > 0 && stubScriptPath.length > 0) {
     return {

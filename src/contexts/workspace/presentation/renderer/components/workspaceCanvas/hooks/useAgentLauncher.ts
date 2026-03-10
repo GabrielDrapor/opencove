@@ -80,7 +80,7 @@ export function useWorkspaceCanvasAgentLauncher({
 
     void (async () => {
       try {
-        const launched = await window.coveApi.agent.launch({
+        const launched = await window.opencoveApi.agent.launch({
           provider,
           cwd: executionDirectory,
           prompt: '',

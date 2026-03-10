@@ -76,7 +76,7 @@ export function useWorkspaceCanvasNodesStore({
       const target = nodesRef.current.find(node => node.id === nodeId)
       if (target && target.data.sessionId.length > 0) {
         invalidateCachedTerminalScreenState(nodeId, target.data.sessionId)
-        await window.coveApi.pty.kill({ sessionId: target.data.sessionId })
+        await window.opencoveApi.pty.kill({ sessionId: target.data.sessionId })
       }
 
       setNodes(prevNodes => {

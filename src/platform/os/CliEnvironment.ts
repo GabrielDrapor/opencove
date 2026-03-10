@@ -11,7 +11,7 @@ const POSIX_FALLBACK_PATH_SEGMENTS = [
   '/sbin',
 ]
 
-const PATH_MARKER = '__COVE_PATH_MARKER__'
+const PATH_MARKER = '__OPENCOVE_PATH_MARKER__'
 
 interface ComputeHydratedCliPathInput {
   isPackaged: boolean

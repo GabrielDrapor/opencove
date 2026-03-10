@@ -96,7 +96,7 @@ export function registerAgentIpcHandlers(
 
     const shouldStartStateWatcher =
       process.env.NODE_ENV !== 'test' ||
-      process.env['COVE_TEST_ENABLE_SESSION_STATE_WATCHER'] === '1'
+      process.env['OPENCOVE_TEST_ENABLE_SESSION_STATE_WATCHER'] === '1'
 
     if (shouldStartStateWatcher) {
       ptyRuntime.startSessionStateWatcher({
