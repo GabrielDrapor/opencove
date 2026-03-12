@@ -17,6 +17,7 @@ export function SpaceWorktreePanels({
   existingBranchName,
   deleteBranchOnArchive,
   archiveSpaceOnArchive,
+  onClose,
   onBranchModeChange,
   onNewBranchNameChange,
   onStartPointChange,
@@ -41,6 +42,7 @@ export function SpaceWorktreePanels({
   existingBranchName: string
   deleteBranchOnArchive: boolean
   archiveSpaceOnArchive: boolean
+  onClose: () => void
   onBranchModeChange: (mode: BranchMode) => void
   onNewBranchNameChange: (value: string) => void
   onStartPointChange: (value: string) => void
@@ -203,47 +205,74 @@ export function SpaceWorktreePanels({
             <h4>Archive Space</h4>
           </div>
 
-          <section className="workspace-space-worktree__surface workspace-space-worktree__surface--danger">
+          <section className="workspace-space-worktree__surface workspace-space-worktree__surface--minimal">
             {isSpaceOnWorkspaceRoot ? (
-              <p>
-                This will archive <strong>{space.name}</strong> and remove all nodes inside it.
-              </p>
+              <div className="workspace-space-worktree__message-block">
+                <p className="workspace-space-worktree__lead">
+                  Archive <strong>{space.name}</strong> and remove all nodes inside it.
+                </p>
+                <p className="workspace-space-worktree__supporting-text">
+                  This space is already on the workspace root, so only the space and its contents
+                  will be removed.
+                </p>
+              </div>
             ) : (
-              <>
-                <p>
-                  This will rebind <strong>{space.name}</strong> to the workspace root and remove
-                  its current worktree.
+              <div className="workspace-space-worktree__message-block">
+                <p className="workspace-space-worktree__lead">
+                  Rebind <strong>{space.name}</strong> to the workspace root and remove its current
+                  worktree.
+                </p>
+                <p className="workspace-space-worktree__supporting-text">
+                  Choose whether this flow should also delete the branch or archive the space
+                  itself.
                 </p>
 
-                <label className="workspace-space-worktree__checkbox">
-                  <input
-                    type="checkbox"
-                    data-testid="space-worktree-archive-delete-branch"
-                    checked={deleteBranchOnArchive}
-                    disabled={isBusy}
-                    onChange={event => {
-                      onDeleteBranchOnArchiveChange(event.target.checked)
-                    }}
-                  />
-                  Also delete the current branch
-                </label>
+                <div className="workspace-space-worktree__option-list">
+                  <label className="cove-window__checkbox workspace-space-worktree__option-row">
+                    <input
+                      type="checkbox"
+                      data-testid="space-worktree-archive-delete-branch"
+                      checked={deleteBranchOnArchive}
+                      disabled={isBusy}
+                      onChange={event => {
+                        onDeleteBranchOnArchiveChange(event.target.checked)
+                      }}
+                    />
+                    <span className="workspace-space-worktree__option-copy">
+                      <strong>Delete current branch</strong>
+                      <span>Remove the git branch after the worktree is detached.</span>
+                    </span>
+                  </label>
 
-                <label className="workspace-space-worktree__checkbox">
-                  <input
-                    type="checkbox"
-                    data-testid="space-worktree-archive-space"
-                    checked={archiveSpaceOnArchive}
-                    disabled={isBusy}
-                    onChange={event => {
-                      onArchiveSpaceOnArchiveChange(event.target.checked)
-                    }}
-                  />
-                  Also archive this Space and remove all nodes inside it
-                </label>
-              </>
+                  <label className="cove-window__checkbox workspace-space-worktree__option-row">
+                    <input
+                      type="checkbox"
+                      data-testid="space-worktree-archive-space"
+                      checked={archiveSpaceOnArchive}
+                      disabled={isBusy}
+                      onChange={event => {
+                        onArchiveSpaceOnArchiveChange(event.target.checked)
+                      }}
+                    />
+                    <span className="workspace-space-worktree__option-copy">
+                      <strong>Archive this space</strong>
+                      <span>Remove the space and every node currently inside it.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
             )}
 
-            <div className="workspace-space-worktree__inline-actions">
+            <div className="workspace-space-worktree__inline-actions workspace-space-worktree__inline-actions--footer">
+              <button
+                type="button"
+                className="cove-window__action cove-window__action--ghost"
+                data-testid="space-worktree-archive-cancel"
+                disabled={isBusy}
+                onClick={onClose}
+              >
+                Keep Current Setup
+              </button>
               <button
                 type="button"
                 className="cove-window__action cove-window__action--danger"

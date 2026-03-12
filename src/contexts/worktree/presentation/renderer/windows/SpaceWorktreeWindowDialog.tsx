@@ -71,7 +71,6 @@ export function SpaceWorktreeWindowDialog({
       : currentWorktree?.head?.trim()
         ? currentWorktree.head.slice(0, 7)
         : 'Detached HEAD'
-  const statusContext = isSpaceOnWorkspaceRoot ? 'root' : 'worktree'
 
   return (
     <div
@@ -100,21 +99,19 @@ export function SpaceWorktreeWindowDialog({
             >
               <GitBranch size={14} aria-hidden="true" />
               <span>{statusLabel}</span>
-              <span className="workspace-space-worktree__status-separator" aria-hidden="true">
-                /
-              </span>
-              <span className="workspace-space-worktree__status-context">{statusContext}</span>
             </div>
-            <button
-              type="button"
-              className="workspace-space-worktree__close"
-              data-testid="space-worktree-close"
-              aria-label="Close worktree window"
-              disabled={isBusy || guardIsBusy}
-              onClick={onClose}
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
+            {viewMode === 'create' ? (
+              <button
+                type="button"
+                className="workspace-space-worktree__close"
+                data-testid="space-worktree-close"
+                aria-label="Close worktree window"
+                disabled={isBusy || guardIsBusy}
+                onClick={onClose}
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         </header>
 
@@ -133,6 +130,7 @@ export function SpaceWorktreeWindowDialog({
           existingBranchName={existingBranchName}
           deleteBranchOnArchive={deleteBranchOnArchive}
           archiveSpaceOnArchive={archiveSpaceOnArchive}
+          onClose={onClose}
           onBranchModeChange={onBranchModeChange}
           onNewBranchNameChange={onNewBranchNameChange}
           onStartPointChange={onStartPointChange}
