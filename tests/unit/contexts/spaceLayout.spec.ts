@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   computeSpaceRectFromNodes,
+  getSpaceFrameHandleCursor,
   pushAwayLayout,
+  resolveInteractiveSpaceFrameHandle,
   resolveSpaceFrameHandle,
 } from '../../../src/contexts/workspace/presentation/renderer/utils/spaceLayout'
 
@@ -58,6 +60,47 @@ describe('spaceLayout', () => {
       kind: 'resize',
       edges: { left: true, top: true },
     })
+  })
+
+  it('converts single-edge region hits back to move and preserves corner resize', () => {
+    const rect = { x: 0, y: 0, width: 200, height: 120 }
+
+    expect(
+      resolveInteractiveSpaceFrameHandle({
+        rect,
+        point: { x: 100, y: 0 },
+        zoom: 1,
+        mode: 'region',
+      }),
+    ).toEqual({ kind: 'move' })
+
+    expect(
+      resolveInteractiveSpaceFrameHandle({
+        rect,
+        point: { x: 2, y: 2 },
+        zoom: 1,
+        mode: 'region',
+      }),
+    ).toEqual({
+      kind: 'resize',
+      edges: { left: true, top: true },
+    })
+  })
+
+  it('maps resize handles to the same directional cursors used by nodes', () => {
+    expect(getSpaceFrameHandleCursor({ kind: 'move' })).toBe('grab')
+    expect(getSpaceFrameHandleCursor({ kind: 'resize', edges: { right: true } })).toBe(
+      'ew-resize',
+    )
+    expect(getSpaceFrameHandleCursor({ kind: 'resize', edges: { bottom: true } })).toBe(
+      'ns-resize',
+    )
+    expect(
+      getSpaceFrameHandleCursor({ kind: 'resize', edges: { left: true, top: true } }),
+    ).toBe('nwse-resize')
+    expect(
+      getSpaceFrameHandleCursor({ kind: 'resize', edges: { right: true, top: true } }),
+    ).toBe('nesw-resize')
   })
 
   it('pushes colliding groups away along the requested axis (with chain reactions)', () => {

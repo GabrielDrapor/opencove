@@ -3,7 +3,7 @@ import { useStoreApi, type Node, type ReactFlowInstance } from '@xyflow/react'
 import type { TerminalNodeData, WorkspaceSpaceRect, WorkspaceSpaceState } from '../../../types'
 import type { ContextMenuState, EmptySelectionPromptState, SpaceDragState } from '../types'
 import {
-  resolveSpaceFrameHandle,
+  resolveInteractiveSpaceFrameHandle,
   SPACE_MIN_SIZE,
   type SpaceFrameHandle,
 } from '../../../utils/spaceLayout'
@@ -426,19 +426,12 @@ export function useWorkspaceCanvasSpaceDrag({
       })
 
       const zoom = reactFlow.getZoom()
-      let handle: SpaceFrameHandle = resolveSpaceFrameHandle({
+      const handle: SpaceFrameHandle = resolveInteractiveSpaceFrameHandle({
         rect: targetSpace.rect,
         point: startFlow,
         zoom,
+        mode: options?.mode ?? 'auto',
       })
-
-      const mode = options?.mode ?? 'auto'
-      if (mode === 'region' && handle.kind === 'resize') {
-        const edgeCount = Object.keys(handle.edges).length
-        if (edgeCount <= 1) {
-          handle = { kind: 'move' }
-        }
-      }
 
       spaceDragStateRef.current = createSpaceDragState({
         pointerId: 'pointerId' in event ? event.pointerId : -1,

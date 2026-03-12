@@ -13,6 +13,8 @@ export type SpaceFrameHandle =
       edges: Partial<Record<'top' | 'right' | 'bottom' | 'left', true>>
     }
 
+export type SpaceFrameHandleMode = 'auto' | 'region'
+
 export function computeSpaceRectFromNodes(
   nodes: Array<{ x: number; y: number; width: number; height: number }>,
 ): WorkspaceSpaceRect {
@@ -104,6 +106,61 @@ export function resolveSpaceFrameHandle({
   }
 
   return { kind: 'move' }
+}
+
+export function applySpaceFrameHandleMode(
+  handle: SpaceFrameHandle,
+  mode: SpaceFrameHandleMode = 'auto',
+): SpaceFrameHandle {
+  if (mode !== 'region' || handle.kind !== 'resize') {
+    return handle
+  }
+
+  const edgeCount = Object.keys(handle.edges).length
+  if (edgeCount <= 1) {
+    return { kind: 'move' }
+  }
+
+  return handle
+}
+
+export function resolveInteractiveSpaceFrameHandle({
+  rect,
+  point,
+  zoom,
+  mode = 'auto',
+}: {
+  rect: WorkspaceSpaceRect
+  point: { x: number; y: number }
+  zoom: number
+  mode?: SpaceFrameHandleMode
+}): SpaceFrameHandle {
+  return applySpaceFrameHandleMode(resolveSpaceFrameHandle({ rect, point, zoom }), mode)
+}
+
+export function getSpaceFrameHandleCursor(handle: SpaceFrameHandle): string {
+  if (handle.kind !== 'resize') {
+    return 'grab'
+  }
+
+  const { left, right, top, bottom } = handle.edges
+  if ((left && top) || (right && bottom)) {
+    return 'nwse-resize'
+  }
+
+  if ((right && top) || (left && bottom)) {
+    return 'nesw-resize'
+  }
+
+  if (left || right) {
+    return 'ew-resize'
+  }
+
+  if (top || bottom) {
+    return 'ns-resize'
+  }
+
+  return 'grab'
 }
 
 export type LayoutDirection = 'x+' | 'x-' | 'y+' | 'y-'

@@ -1,10 +1,15 @@
 import React from 'react'
-import { ViewportPortal } from '@xyflow/react'
+import { ViewportPortal, useReactFlow } from '@xyflow/react'
 import type { GitWorktreeInfo } from '@shared/contracts/dto'
 import type { WorkspaceSpaceRect } from '../../../types'
 import type { SpaceVisual } from '../types'
 import { toErrorMessage } from '../helpers'
 import { getBranchNameValidationError, getWorktreeApiMethod } from '../windows/spaceWorktree.shared'
+import {
+  getSpaceFrameHandleCursor,
+  resolveInteractiveSpaceFrameHandle,
+  type SpaceFrameHandleMode,
+} from '../../../utils/spaceLayout'
 import {
   WorkspaceSpaceBranchRenameDialog,
   type BranchRenameState,
@@ -45,6 +50,7 @@ export function WorkspaceSpaceRegionsOverlay({
   startSpaceRename,
   onOpenSpaceMenu,
 }: WorkspaceSpaceRegionsOverlayProps): React.JSX.Element {
+  const reactFlow = useReactFlow()
   const selectedSpaceIdSet = React.useMemo(() => new Set(selectedSpaceIds), [selectedSpaceIds])
   const branchRenameInputRef = React.useRef<HTMLInputElement | null>(null)
   const [refreshNonce, setRefreshNonce] = React.useState(0)
@@ -217,6 +223,29 @@ export function WorkspaceSpaceRegionsOverlay({
     }
   }, [branchRename, workspacePath])
 
+  const updateHandleCursor = React.useCallback(
+    (
+      event:
+        | React.PointerEvent<HTMLDivElement>
+        | React.MouseEvent<HTMLDivElement>,
+      rect: WorkspaceSpaceRect,
+      mode: SpaceFrameHandleMode,
+    ): void => {
+      const point = reactFlow.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+      const handle = resolveInteractiveSpaceFrameHandle({
+        rect,
+        point,
+        zoom: reactFlow.getZoom(),
+        mode,
+      })
+      event.currentTarget.style.cursor = getSpaceFrameHandleCursor(handle)
+    },
+    [reactFlow],
+  )
+
   return (
     <>
       <ViewportPortal>
@@ -269,8 +298,14 @@ export function WorkspaceSpaceRegionsOverlay({
                   onPointerDown={event => {
                     handleSpaceDragHandlePointerDown(event, space.id, { mode: 'region' })
                   }}
+                  onPointerMove={event => {
+                    updateHandleCursor(event, resolvedRect, 'region')
+                  }}
                   onMouseDown={event => {
                     handleSpaceDragHandlePointerDown(event, space.id, { mode: 'region' })
+                  }}
+                  onMouseMove={event => {
+                    updateHandleCursor(event, resolvedRect, 'region')
                   }}
                 />
               ) : null}
@@ -284,12 +319,18 @@ export function WorkspaceSpaceRegionsOverlay({
                     isSelected ? { mode: 'region' } : undefined,
                   )
                 }}
+                onPointerMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
+                }}
                 onMouseDown={event => {
                   handleSpaceDragHandlePointerDown(
                     event,
                     space.id,
                     isSelected ? { mode: 'region' } : undefined,
                   )
+                }}
+                onMouseMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
                 }}
               />
               <div
@@ -302,12 +343,18 @@ export function WorkspaceSpaceRegionsOverlay({
                     isSelected ? { mode: 'region' } : undefined,
                   )
                 }}
+                onPointerMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
+                }}
                 onMouseDown={event => {
                   handleSpaceDragHandlePointerDown(
                     event,
                     space.id,
                     isSelected ? { mode: 'region' } : undefined,
                   )
+                }}
+                onMouseMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
                 }}
               />
               <div
@@ -320,12 +367,18 @@ export function WorkspaceSpaceRegionsOverlay({
                     isSelected ? { mode: 'region' } : undefined,
                   )
                 }}
+                onPointerMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
+                }}
                 onMouseDown={event => {
                   handleSpaceDragHandlePointerDown(
                     event,
                     space.id,
                     isSelected ? { mode: 'region' } : undefined,
                   )
+                }}
+                onMouseMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
                 }}
               />
               <div
@@ -338,12 +391,18 @@ export function WorkspaceSpaceRegionsOverlay({
                     isSelected ? { mode: 'region' } : undefined,
                   )
                 }}
+                onPointerMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
+                }}
                 onMouseDown={event => {
                   handleSpaceDragHandlePointerDown(
                     event,
                     space.id,
                     isSelected ? { mode: 'region' } : undefined,
                   )
+                }}
+                onMouseMove={event => {
+                  updateHandleCursor(event, resolvedRect, isSelected ? 'region' : 'auto')
                 }}
               />
               {editingSpaceId === space.id ? (
