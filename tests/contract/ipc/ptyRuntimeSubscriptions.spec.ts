@@ -183,6 +183,151 @@ describe('Pty runtime subscriptions', () => {
     vi.useRealTimers()
   })
 
+  it('restores probe fallback after the last subscriber detaches', async () => {
+    vi.useFakeTimers()
+    vi.resetModules()
+
+    const send = vi.fn()
+    const write = vi.fn()
+    const resize = vi.fn()
+    const content = {
+      isDestroyed: () => false,
+      getType: () => 'window',
+      send,
+      once: vi.fn(),
+    }
+
+    let onDataHandler: ((data: string) => void) | null = null
+
+    const pty = {
+      onData: (handler: (data: string) => void) => {
+        onDataHandler = handler
+      },
+      onExit: (_handler: (event: { exitCode: number }) => void) => {},
+    }
+
+    class MockPtyManager {
+      public appendSnapshotData(): void {}
+      public snapshot(): string {
+        return ''
+      }
+      public write = write
+      public resize = resize
+      public kill(): void {}
+      public delete(): void {}
+      public disposeAll(): void {}
+
+      public spawnSession(): { sessionId: string; pty: typeof pty } {
+        return { sessionId: 'session-1', pty }
+      }
+    }
+
+    vi.doMock('electron', () => ({
+      webContents: {
+        getAllWebContents: () => [content],
+        fromId: (id: number) => (id === 1 ? content : null),
+      },
+    }))
+
+    vi.doMock('../../../src/platform/process/pty/PtyManager', () => ({
+      PtyManager: MockPtyManager,
+    }))
+
+    const { createPtyRuntime } =
+      await import('../../../src/contexts/terminal/presentation/main-ipc/runtime')
+
+    const runtime = createPtyRuntime()
+    runtime.spawnSession({ cwd: '/tmp', cols: 80, rows: 24 })
+    runtime.attach(1, 'session-1')
+    runtime.resize('session-1', 120, 40)
+
+    onDataHandler?.('\u001b[6n\u001b[c\u001b[?u')
+    expect(write).toHaveBeenCalledTimes(0)
+
+    runtime.detach(1, 'session-1')
+
+    onDataHandler?.('\u001b[6n\u001b[c\u001b[?u')
+    expect(write.mock.calls).toEqual([
+      ['session-1', '\u001b[1;1R'],
+      ['session-1', '\u001b[?1;2c'],
+      ['session-1', '\u001b[?0u'],
+    ])
+
+    runtime.dispose()
+    vi.useRealTimers()
+  })
+
+  it('restores probe fallback when webContents cleanup removes the last subscriber', async () => {
+    vi.useFakeTimers()
+    vi.resetModules()
+
+    const destroyedHandlers: Array<() => void> = []
+    const write = vi.fn()
+    const content = {
+      isDestroyed: () => false,
+      getType: () => 'window',
+      send: vi.fn(),
+      once: (_event: string, handler: () => void) => {
+        destroyedHandlers.push(handler)
+      },
+    }
+
+    let onDataHandler: ((data: string) => void) | null = null
+
+    const pty = {
+      onData: (handler: (data: string) => void) => {
+        onDataHandler = handler
+      },
+      onExit: (_handler: (event: { exitCode: number }) => void) => {},
+    }
+
+    class MockPtyManager {
+      public appendSnapshotData(): void {}
+      public snapshot(): string {
+        return ''
+      }
+      public write = write
+      public resize(): void {}
+      public kill(): void {}
+      public delete(): void {}
+      public disposeAll(): void {}
+
+      public spawnSession(): { sessionId: string; pty: typeof pty } {
+        return { sessionId: 'session-1', pty }
+      }
+    }
+
+    vi.doMock('electron', () => ({
+      webContents: {
+        getAllWebContents: () => [content],
+        fromId: (id: number) => (id === 1 ? content : null),
+      },
+    }))
+
+    vi.doMock('../../../src/platform/process/pty/PtyManager', () => ({
+      PtyManager: MockPtyManager,
+    }))
+
+    const { createPtyRuntime } =
+      await import('../../../src/contexts/terminal/presentation/main-ipc/runtime')
+
+    const runtime = createPtyRuntime()
+    runtime.spawnSession({ cwd: '/tmp', cols: 80, rows: 24 })
+    runtime.attach(1, 'session-1')
+
+    onDataHandler?.('\u001b[>c')
+    expect(write).toHaveBeenCalledTimes(0)
+
+    destroyedHandlers[0]?.()
+
+    onDataHandler?.('\u001b[>c')
+    expect(write).toHaveBeenCalledTimes(1)
+    expect(write).toHaveBeenCalledWith('session-1', '\u001b[>0;115;0c')
+
+    runtime.dispose()
+    vi.useRealTimers()
+  })
+
   it('coalesces snapshot writes and broadcasts per flush window', async () => {
     vi.useFakeTimers()
     vi.resetModules()
