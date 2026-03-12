@@ -416,6 +416,15 @@ export function TerminalNode({
           return
         }
 
+        if (
+          event.detail === 2 &&
+          event.target instanceof Element &&
+          event.target.closest('.terminal-node__header') &&
+          !event.target.closest('.nodrag')
+        ) {
+          return
+        }
+
         const interaction = resolveTerminalNodeInteraction(event.target)
         if (!interaction) {
           return

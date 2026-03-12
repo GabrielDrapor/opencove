@@ -101,7 +101,7 @@ export function useWorkspaceCanvasNodeCreation({
           note: null,
         },
         draggable: true,
-        selectable: true,
+        selectable: false,
       }
 
       setNodes(prevNodes => [...prevNodes, nextNode])

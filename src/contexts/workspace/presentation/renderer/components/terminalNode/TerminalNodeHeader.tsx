@@ -53,8 +53,26 @@ export function TerminalNodeHeader({
     setTitleDraft(title)
   }, [title])
 
+  const handleHeaderClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (
+        event.detail !== 2 ||
+        !isTitleEditable ||
+        isTitleEditing ||
+        !(event.target instanceof Element) ||
+        event.target.closest('.nodrag')
+      ) {
+        return
+      }
+
+      event.stopPropagation()
+      setIsTitleEditing(true)
+    },
+    [isTitleEditable, isTitleEditing],
+  )
+
   return (
-    <div className="terminal-node__header" data-node-drag-handle="true">
+    <div className="terminal-node__header" data-node-drag-handle="true" onClick={handleHeaderClick}>
       {isTitleEditable ? (
         isTitleEditing ? (
           <>
@@ -98,15 +116,7 @@ export function TerminalNodeHeader({
             />
           </>
         ) : (
-          <span
-            className="terminal-node__title"
-            onDoubleClick={event => {
-              event.stopPropagation()
-              setIsTitleEditing(true)
-            }}
-          >
-            {titleDraft}
-          </span>
+          <span className="terminal-node__title">{titleDraft}</span>
         )
       ) : (
         <span className="terminal-node__title">{title}</span>

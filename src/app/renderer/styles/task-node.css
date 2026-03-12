@@ -10,12 +10,12 @@
 }
 
 .task-node__header {
-  min-height: 42px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px 7px;
+  padding: 0 10px;
   background: rgba(23, 36, 66, 0.96);
   border-bottom: 1px solid rgba(104, 137, 226, 0.45);
   cursor: grab;
@@ -26,10 +26,12 @@
 }
 
 .task-node__header-main {
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: center;
+  gap: 0;
 }
 
 .task-node--enriching .task-node__header-main {
@@ -125,28 +127,28 @@
 .task-node__icon-button {
   width: 24px;
   height: 24px;
-  border-radius: 7px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(104, 137, 219, 0.42);
-  background: rgba(17, 30, 56, 0.82);
-  color: #c6dafb;
+  border: 0;
+  background: transparent;
+  color: #9fb6e7;
   cursor: pointer;
-  transition:
-    background 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease;
+  padding: 0;
+  transition: color 0.16s ease;
 }
 
 .task-node__icon-button:hover {
-  background: rgba(35, 54, 93, 0.94);
-  border-color: rgba(138, 173, 255, 0.55);
-  color: #eff6ff;
+  color: #fff;
+}
+
+.task-node__icon-button:focus-visible {
+  outline: 2px solid rgba(153, 223, 255, 0.85);
+  outline-offset: 2px;
 }
 
 .task-node__icon-button--close {
-  font-size: calc(15px * var(--cove-ui-font-scale));
+  font-size: calc(18px * var(--cove-ui-font-scale));
   line-height: 1;
 }
 
@@ -248,6 +250,41 @@
   white-space: pre-wrap;
 }
 
+.task-node__content p,
+.task-node__requirement-input,
+.task-node__agents {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(119, 157, 240, 0.68) rgba(11, 20, 38, 0.82);
+}
+
+.task-node__content p::-webkit-scrollbar,
+.task-node__requirement-input::-webkit-scrollbar,
+.task-node__agents::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.task-node__content p::-webkit-scrollbar-track,
+.task-node__requirement-input::-webkit-scrollbar-track,
+.task-node__agents::-webkit-scrollbar-track {
+  background: rgba(11, 20, 38, 0.82);
+  border-radius: 999px;
+}
+
+.task-node__content p::-webkit-scrollbar-thumb,
+.task-node__requirement-input::-webkit-scrollbar-thumb,
+.task-node__agents::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(136, 178, 255, 0.78), rgba(88, 124, 210, 0.78));
+  border: 2px solid rgba(11, 20, 38, 0.82);
+  border-radius: 999px;
+}
+
+.task-node__content p::-webkit-scrollbar-thumb:hover,
+.task-node__requirement-input::-webkit-scrollbar-thumb:hover,
+.task-node__agents::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(164, 203, 255, 0.9), rgba(106, 145, 234, 0.9));
+}
+
 .task-node__requirement-text {
   cursor: text;
   border-radius: 8px;
@@ -289,11 +326,6 @@
 .task-node__requirement-input:focus {
   outline: none;
   box-shadow: none;
-}
-
-.task-node__inline-hint {
-  font-size: calc(10px * var(--cove-ui-font-scale));
-  color: rgba(167, 190, 233, 0.92);
 }
 
 .task-node__agents {

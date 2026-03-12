@@ -116,16 +116,20 @@ function NoteNodeType({
   data,
   id,
   selectNode,
+  clearNodeSelectionRef,
   closeNodeRef,
   resizeNodeRef,
   updateNoteTextRef,
+  normalizeViewportForTerminalInteractionRef,
 }: {
   data: TerminalNodeData
   id: string
   selectNode: (nodeId: string, options?: { toggle?: boolean }) => void
+  clearNodeSelectionRef: MutableRefObject<() => void>
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNoteTextRef: MutableRefObject<(nodeId: string, text: string) => void>
+  normalizeViewportForTerminalInteractionRef: MutableRefObject<(nodeId: string) => void>
 }): ReactElement | null {
   if (!data.note) {
     return null
@@ -144,6 +148,12 @@ function NoteNodeType({
         updateNoteTextRef.current(id, text)
       }}
       onInteractionStart={options => {
+        if (options?.clearSelection === true) {
+          window.setTimeout(() => {
+            clearNodeSelectionRef.current()
+          }, 0)
+        }
+
         if (options?.selectNode !== false) {
           if (options?.shiftKey === true) {
             selectNode(id, { toggle: true })
@@ -168,6 +178,7 @@ interface WorkspaceCanvasNodeTypesParams {
   workspacePath: string
   terminalFontSize: number
   selectNode: (nodeId: string, options?: { toggle?: boolean }) => void
+  clearNodeSelectionRef: MutableRefObject<() => void>
   closeNodeRef: MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNoteTextRef: MutableRefObject<(nodeId: string, text: string) => void>
@@ -192,6 +203,7 @@ export function useWorkspaceCanvasNodeTypes({
   workspacePath,
   terminalFontSize,
   selectNode,
+  clearNodeSelectionRef,
   closeNodeRef,
   resizeNodeRef,
   updateNoteTextRef,
@@ -354,15 +366,18 @@ export function useWorkspaceCanvasNodeTypes({
             data={data}
             id={id}
             selectNode={selectNode}
+            clearNodeSelectionRef={clearNodeSelectionRef}
             closeNodeRef={closeNodeRef}
             resizeNodeRef={resizeNodeRef}
             updateNoteTextRef={updateNoteTextRef}
+            normalizeViewportForTerminalInteractionRef={normalizeViewportForTerminalInteractionRef}
           />
         )
       },
       taskNode: TaskNodeType,
     }
   }, [
+    clearNodeSelectionRef,
     closeNodeRef,
     normalizeViewportForTerminalInteractionRef,
     selectNode,

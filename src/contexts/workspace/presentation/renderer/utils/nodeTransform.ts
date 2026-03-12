@@ -39,6 +39,6 @@ export function toRuntimeNodes(workspace: PersistedWorkspaceState): Node<Termina
       note: node.kind === 'note' ? (node.task ?? { text: '' }) : null,
     },
     draggable: true,
-    selectable: true,
+    selectable: node.kind !== 'note',
   }))
 }

@@ -168,6 +168,10 @@ export interface SeedTaskData {
   updatedAt?: string | null
 }
 
+export interface SeedNoteData {
+  text: string
+}
+
 export interface SeedNode {
   id: string
   title: string
@@ -177,7 +181,7 @@ export interface SeedNode {
   }
   width: number
   height: number
-  kind?: 'terminal' | 'agent' | 'task'
+  kind?: 'terminal' | 'agent' | 'task' | 'note'
   status?: 'running' | 'standby' | 'exited' | 'failed' | 'stopped' | 'restoring' | null
   startedAt?: string | null
   endedAt?: string | null
@@ -187,7 +191,7 @@ export interface SeedNode {
   executionDirectory?: string | null
   expectedDirectory?: string | null
   agent?: SeedAgentData | null
-  task?: SeedTaskData | null
+  task?: SeedTaskData | SeedNoteData | null
 }
 
 export interface SeedWorkspace {

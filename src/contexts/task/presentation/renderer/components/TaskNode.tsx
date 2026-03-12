@@ -205,6 +205,19 @@ export function TaskNode({
     setTitleDraft(title)
   }, [title])
 
+  const handleHeaderClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (
+      event.detail !== 2 ||
+      !(event.target instanceof Element) ||
+      event.target.closest('.nodrag')
+    ) {
+      return
+    }
+
+    event.stopPropagation()
+    setIsTitleEditing(true)
+  }, [])
+
   const commitRequirementDraft = useCallback(() => {
     const normalized = requirementDraft.trim()
     if (normalized.length === 0) {
@@ -233,6 +246,14 @@ export function TaskNode({
       style={style}
       onClickCapture={event => {
         if (event.button !== 0 || !(event.target instanceof Element)) {
+          return
+        }
+
+        if (
+          event.detail === 2 &&
+          event.target.closest('.task-node__header') &&
+          !event.target.closest('.nodrag')
+        ) {
           return
         }
 
@@ -270,45 +291,52 @@ export function TaskNode({
         />
       ) : null}
 
-      <div className="task-node__header" data-node-drag-handle="true">
+      <div className="task-node__header" data-node-drag-handle="true" onClick={handleHeaderClick}>
         <div className="task-node__header-main">
-          <span className="task-node__title task-node__title-proxy" aria-hidden="true">
-            {titleDraft}
-          </span>
-          <input
-            className="task-node__title-input nodrag nowheel"
-            data-testid="task-node-inline-title-input"
-            value={titleDraft}
-            onFocus={() => {
-              setIsTitleEditing(true)
-            }}
-            onPointerDown={event => {
-              event.stopPropagation()
-            }}
-            onClick={event => {
-              event.stopPropagation()
-            }}
-            onChange={event => {
-              setTitleDraft(event.target.value)
-            }}
-            onBlur={() => {
-              commitTitleDraft()
-              setIsTitleEditing(false)
-            }}
-            onKeyDown={event => {
-              if (event.key === 'Escape') {
-                event.preventDefault()
-                cancelTitleEdit()
-                event.currentTarget.blur()
-                return
-              }
+          {isTitleEditing ? (
+            <>
+              <span className="task-node__title task-node__title-proxy" aria-hidden="true">
+                {titleDraft}
+              </span>
+              <input
+                className="task-node__title-input nodrag nowheel"
+                data-testid="task-node-inline-title-input"
+                value={titleDraft}
+                autoFocus
+                onFocus={() => {
+                  setIsTitleEditing(true)
+                }}
+                onPointerDown={event => {
+                  event.stopPropagation()
+                }}
+                onClick={event => {
+                  event.stopPropagation()
+                }}
+                onChange={event => {
+                  setTitleDraft(event.target.value)
+                }}
+                onBlur={() => {
+                  commitTitleDraft()
+                  setIsTitleEditing(false)
+                }}
+                onKeyDown={event => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault()
+                    cancelTitleEdit()
+                    event.currentTarget.blur()
+                    return
+                  }
 
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                event.currentTarget.blur()
-              }
-            }}
-          />
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    event.currentTarget.blur()
+                  }
+                }}
+              />
+            </>
+          ) : (
+            <span className="task-node__title">{titleDraft}</span>
+          )}
         </div>
 
         <div className="task-node__header-actions nodrag">
@@ -401,9 +429,6 @@ export function TaskNode({
               }
             }}
           />
-          {isRequirementEditing ? (
-            <span className="task-node__inline-hint">Ctrl/Cmd+Enter to save · Esc to cancel</span>
-          ) : null}
         </div>
       </div>
 

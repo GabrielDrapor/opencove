@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useLayoutEffect, useMemo } from 'react'
 import { ReactFlowProvider, useReactFlow, type Edge, type Node } from '@xyflow/react'
 import type { TerminalNodeData } from '../types'
 import * as workspaceCanvasHooks from './workspaceCanvas/hooks'
@@ -339,6 +339,10 @@ function WorkspaceCanvasInner({
     createNodeForSession,
     createNoteNode,
   })
+
+  useLayoutEffect(() => {
+    actionRefs.clearNodeSelectionRef.current = clearNodeSelection
+  }, [actionRefs.clearNodeSelectionRef, clearNodeSelection])
   const applyChanges = workspaceCanvasHooks.useWorkspaceCanvasApplyNodeChanges({
     nodesRef,
     onNodesChange,

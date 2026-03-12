@@ -6,6 +6,7 @@ import { shouldStopWheelPropagation } from './taskNode/helpers'
 interface NoteNodeInteractionOptions {
   normalizeViewport?: boolean
   selectNode?: boolean
+  clearSelection?: boolean
   shiftKey?: boolean
 }
 
@@ -133,6 +134,7 @@ export function NoteNode({
           event.stopPropagation()
           onInteractionStart?.({
             normalizeViewport: true,
+            clearSelection: true,
             selectNode: false,
             shiftKey: event.shiftKey,
           })
@@ -174,6 +176,9 @@ export function NoteNode({
         className="note-node__textarea nodrag nowheel"
         data-testid="note-node-textarea"
         value={text}
+        onPointerDownCapture={event => {
+          event.stopPropagation()
+        }}
         onPointerDown={event => {
           event.stopPropagation()
         }}

@@ -10,7 +10,7 @@ test.describe('Workspace Canvas - Tasks (Edit & Delete)', () => {
         {
           id: 'task-edit-node',
           title: 'Initial Task Title',
-          position: { x: 180, y: 160 },
+          position: { x: 360, y: 160 },
           width: 460,
           height: 280,
           kind: 'task',
@@ -49,10 +49,24 @@ test.describe('Workspace Canvas - Tasks (Edit & Delete)', () => {
 
       await window.locator('[data-testid="workspace-task-edit-submit"]').click()
 
-      await expect(taskNode.locator('[data-testid="task-node-inline-title-input"]')).toHaveValue(
-        'Retry login workflow',
-      )
+      await expect(taskNode.locator('[data-testid="task-node-inline-title-input"]')).toHaveCount(0)
+      await expect(taskNode.locator('.task-node__header')).toContainText('Retry login workflow')
       await expect(inlineRequirementInput).toHaveValue(/capped exponential/)
+      await expect(taskNode.locator('.task-node__inline-hint')).toHaveCount(0)
+
+      const inlineTitleInput = taskNode.locator('[data-testid="task-node-inline-title-input"]')
+      await taskNode.locator('.task-node__header').dispatchEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        detail: 2,
+      })
+      await expect(inlineTitleInput).toBeVisible()
+      await inlineTitleInput.fill('Retry login workflow final')
+      await inlineTitleInput.press('Enter')
+      await expect(inlineTitleInput).toHaveCount(0)
+      await expect(taskNode.locator('.task-node__header')).toContainText(
+        'Retry login workflow final',
+      )
 
       const rightResizer = taskNode.locator('[data-testid="task-resizer-right"]')
       const rightResizerBox = await rightResizer.boundingBox()
@@ -110,7 +124,7 @@ test.describe('Workspace Canvas - Tasks (Edit & Delete)', () => {
       expect(resizedTask).toBeTruthy()
       expect(resizedTask?.width ?? 0).toBeGreaterThan(460)
       expect(resizedTask?.height ?? 0).toBeGreaterThan(280)
-      expect(resizedTask?.title).toBe('Retry login workflow')
+      expect(resizedTask?.title).toBe('Retry login workflow final')
       expect(resizedTask?.task?.requirement).toContain('capped exponential')
 
       await taskNode.locator('[data-testid="task-node-close"]').click()

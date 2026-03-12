@@ -4,6 +4,7 @@ import type { Size, TaskRuntimeStatus, TerminalNodeData } from '../../../types'
 import { focusNodeInViewport } from '../helpers'
 
 export interface WorkspaceCanvasActionRefs {
+  clearNodeSelectionRef: React.MutableRefObject<() => void>
   closeNodeRef: React.MutableRefObject<(nodeId: string) => Promise<void>>
   resizeNodeRef: React.MutableRefObject<(nodeId: string, desiredSize: Size) => void>
   updateNoteTextRef: React.MutableRefObject<(nodeId: string, text: string) => void>
@@ -28,6 +29,7 @@ export interface WorkspaceCanvasActionRefs {
 }
 
 export function useWorkspaceCanvasActionRefs(): WorkspaceCanvasActionRefs {
+  const clearNodeSelectionRef = useRef<() => void>(() => undefined)
   const closeNodeRef = useRef<(nodeId: string) => Promise<void>>(
     async (_nodeId: string) => undefined,
   )
@@ -71,6 +73,7 @@ export function useWorkspaceCanvasActionRefs(): WorkspaceCanvasActionRefs {
   )
 
   return {
+    clearNodeSelectionRef,
     closeNodeRef,
     resizeNodeRef,
     updateNoteTextRef,
