@@ -75,6 +75,7 @@ export function NodeDeleteConfirmationWindow({
           </button>
           <button
             type="button"
+            autoFocus
             className="cove-window__action cove-window__action--danger workspace-task-creator__action workspace-task-creator__action--danger"
             data-testid="workspace-node-delete-confirm"
             onClick={() => {

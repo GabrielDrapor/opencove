@@ -139,7 +139,7 @@ test.describe('Workspace Canvas - Tasks (Edit & Delete)', () => {
       await taskNode.locator('.task-node__header').click()
       await window.keyboard.press('Backspace')
       await expect(deleteDialog).toBeVisible()
-      await window.locator('[data-testid="workspace-node-delete-confirm"]').click()
+      await window.keyboard.press('Enter')
 
       await expect(window.locator('.task-node')).toHaveCount(0)
     } finally {
