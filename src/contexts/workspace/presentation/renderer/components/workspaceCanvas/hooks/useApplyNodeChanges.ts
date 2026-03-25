@@ -1,51 +1,26 @@
-import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
-import {
-  applyNodeChanges,
-  type Node,
-  type NodeChange,
-  type NodePositionChange,
-} from '@xyflow/react'
-import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
+import { useCallback, useRef } from 'react'
+import { applyNodeChanges } from '@xyflow/react'
+import type { Node, NodeChange, NodePositionChange } from '@xyflow/react'
+import type { TerminalNodeData, WorkspaceSpaceRect } from '../../../types'
 import { cleanupNodeRuntimeArtifacts } from '../../../utils/nodeRuntimeCleanup'
 import { WORKSPACE_ARRANGE_GRID_PX } from '../../../utils/workspaceArrange.shared'
 import {
   resolveWorkspaceNodeSnapCandidateRects,
   unionWorkspaceNodeRects,
 } from '../../../utils/workspaceSnap.nodes'
+import { resolveWorkspaceSnap } from '../../../utils/workspaceSnap'
 import {
-  areWorkspaceSnapGuidesEqual,
-  resolveWorkspaceSnap,
-  type WorkspaceSnapGuide,
-} from '../../../utils/workspaceSnap'
-import { projectWorkspaceNodeDragLayout } from './useSpaceOwnership.projectLayout'
-
-interface UseApplyNodeChangesParams {
-  nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
-  onNodesChange: (nodes: Node<TerminalNodeData>[]) => void
-  clearAgentLaunchToken: (nodeId: string) => void
-  normalizePosition: (
-    nodeId: string,
-    desired: { x: number; y: number },
-    size: { width: number; height: number },
-  ) => { x: number; y: number }
-  applyPendingScrollbacks: (targetNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[]
-  isNodeDraggingRef: MutableRefObject<boolean>
-  spacesRef: MutableRefObject<WorkspaceSpaceState[]>
-  selectedSpaceIdsRef: MutableRefObject<string[]>
-  dragSelectedSpaceIdsRef?: MutableRefObject<string[] | null>
-  magneticSnappingEnabledRef: MutableRefObject<boolean>
-  setSnapGuides: Dispatch<SetStateAction<WorkspaceSnapGuide[] | null>>
-  exclusiveNodeDragAnchorIdRef?: MutableRefObject<string | null>
-  onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
-  onRequestPersistFlush?: () => void
-}
-
-function setResolvedSnapGuides(
-  setSnapGuides: Dispatch<SetStateAction<WorkspaceSnapGuide[] | null>>,
-  guides: WorkspaceSnapGuide[] | null,
-): void {
-  setSnapGuides(current => (areWorkspaceSnapGuidesEqual(current, guides) ? current : guides))
-}
+  areSpaceRectsEqual,
+  buildDragBaselineNodes,
+  setResolvedSnapGuides,
+  setResolvedSpaceFramePreview,
+  type UseApplyNodeChangesParams,
+} from './useApplyNodeChanges.helpers'
+import {
+  projectWorkspaceNodeDropLayout,
+  type WorkspaceNodeDropProjectionCache,
+} from './useSpaceOwnership.projectDropLayout'
+import { projectWorkspaceSpaceDominantLayout } from './useApplyNodeChanges.spaceDominant'
 
 export function useWorkspaceCanvasApplyNodeChanges({
   nodesRef,
@@ -62,7 +37,15 @@ export function useWorkspaceCanvasApplyNodeChanges({
   exclusiveNodeDragAnchorIdRef,
   onSpacesChange,
   onRequestPersistFlush,
+  setSpaceFramePreview,
+  nodeDragPointerAnchorRef,
 }: UseApplyNodeChangesParams): (changes: NodeChange<Node<TerminalNodeData>>[]) => void {
+  const dragBaselinePositionByIdRef = useRef<Map<string, { x: number; y: number }> | null>(null)
+  const dragDropProjectionCacheRef = useRef<WorkspaceNodeDropProjectionCache | null>(null)
+  const dragBaselineSpaceRectByIdRef = useRef<Map<string, WorkspaceSpaceRect> | null>(null)
+  const dragSpaceDominantRef = useRef(false)
+  const dragSpaceFramePreviewRef = useRef<ReadonlyMap<string, WorkspaceSpaceRect> | null>(null)
+
   return useCallback(
     (changes: NodeChange<Node<TerminalNodeData>>[]) => {
       const wasDragging = isNodeDraggingRef.current
@@ -171,6 +154,59 @@ export function useWorkspaceCanvasApplyNodeChanges({
         setResolvedSnapGuides(setSnapGuides, null)
       }
 
+      if (!wasDragging && isDraggingThisFrame) {
+        dragBaselinePositionByIdRef.current = new Map(
+          currentNodes.map(node => [node.id, { x: node.position.x, y: node.position.y }]),
+        )
+        dragBaselineSpaceRectByIdRef.current = new Map(
+          spacesRef.current
+            .filter(space => Boolean(space.rect))
+            .map(space => [space.id, { ...space.rect! }] as const),
+        )
+        const selectedSpaceIdsAtStart =
+          dragSelectedSpaceIdsRef?.current ?? selectedSpaceIdsRef.current
+        dragSpaceDominantRef.current = selectedSpaceIdsAtStart.length > 0
+        dragSpaceFramePreviewRef.current = null
+        dragDropProjectionCacheRef.current = null
+      } else if (wasDragging && !isDraggingThisFrame) {
+        if (dragSpaceDominantRef.current && dragSpaceFramePreviewRef.current) {
+          const rectOverrideById = dragSpaceFramePreviewRef.current
+          const previousSpaces = spacesRef.current
+          let hasSpaceChange = false
+          const nextSpaces = previousSpaces.map(space => {
+            const rect = rectOverrideById.get(space.id) ?? null
+            if (!rect) {
+              return space
+            }
+
+            if (space.rect && areSpaceRectsEqual(space.rect, rect)) {
+              return space
+            }
+
+            hasSpaceChange = true
+            return { ...space, rect: { ...rect } }
+          })
+
+          if (hasSpaceChange) {
+            spacesRef.current = nextSpaces
+            onSpacesChange(nextSpaces)
+            onRequestPersistFlush?.()
+          }
+        }
+
+        dragBaselinePositionByIdRef.current = null
+        dragBaselineSpaceRectByIdRef.current = null
+        dragSpaceDominantRef.current = false
+        dragSpaceFramePreviewRef.current = null
+        dragDropProjectionCacheRef.current = null
+
+        if (setSpaceFramePreview) {
+          window.requestAnimationFrame(() => {
+            setResolvedSpaceFramePreview(setSpaceFramePreview, null)
+          })
+        }
+      }
+
       if (settledPositionChanges.length > 0) {
         if (!wasDragging) {
           nextNodes = nextNodes.map(node => {
@@ -193,104 +229,6 @@ export function useWorkspaceCanvasApplyNodeChanges({
       }
 
       const anchorChange = positionChanges.find(change => change.position !== undefined) ?? null
-      const activeSelectedSpaceIds = dragSelectedSpaceIdsRef?.current ?? selectedSpaceIdsRef.current
-      const hasSelectedSpaces = activeSelectedSpaceIds.length > 0
-      const prevAnchor = anchorChange
-        ? (currentNodes.find(node => node.id === anchorChange.id) ?? null)
-        : null
-      const anchorIsSelected = prevAnchor?.selected === true
-      const shouldSyncSelectedSpaces =
-        hasSelectedSpaces && anchorChange !== null && anchorIsSelected
-
-      if (shouldSyncSelectedSpaces) {
-        const nextAnchor = nextNodes.find(node => node.id === anchorChange.id) ?? null
-
-        if (prevAnchor && nextAnchor) {
-          const dx = nextAnchor.position.x - prevAnchor.position.x
-          const dy = nextAnchor.position.y - prevAnchor.position.y
-
-          if (dx !== 0 || dy !== 0) {
-            const selectedSpaceIdSet = new Set(activeSelectedSpaceIds)
-            const previousSpaces = spacesRef.current
-            const movedSpaceIds = new Set<string>()
-            let hasSpaceMoved = false
-
-            const nextSpaces = previousSpaces.map(space => {
-              if (!selectedSpaceIdSet.has(space.id) || !space.rect) {
-                return space
-              }
-
-              movedSpaceIds.add(space.id)
-
-              const nextRect = {
-                ...space.rect,
-                x: space.rect.x + dx,
-                y: space.rect.y + dy,
-              }
-
-              if (
-                nextRect.x === space.rect.x &&
-                nextRect.y === space.rect.y &&
-                nextRect.width === space.rect.width &&
-                nextRect.height === space.rect.height
-              ) {
-                return space
-              }
-
-              hasSpaceMoved = true
-              return {
-                ...space,
-                rect: nextRect,
-              }
-            })
-
-            if (hasSpaceMoved) {
-              spacesRef.current = nextSpaces
-              onSpacesChange(nextSpaces)
-              onRequestPersistFlush?.()
-            }
-
-            const draggedNodeIds = new Set(positionChanges.map(change => change.id))
-            const ownedNodeIdsToShift = new Set<string>()
-
-            for (const space of previousSpaces) {
-              if (!movedSpaceIds.has(space.id)) {
-                continue
-              }
-
-              for (const nodeId of space.nodeIds) {
-                if (draggedNodeIds.has(nodeId)) {
-                  continue
-                }
-
-                ownedNodeIdsToShift.add(nodeId)
-              }
-            }
-
-            if (ownedNodeIdsToShift.size > 0) {
-              nextNodes = nextNodes.map(node => {
-                if (!ownedNodeIdsToShift.has(node.id)) {
-                  return node
-                }
-
-                const nextPosition = {
-                  x: node.position.x + dx,
-                  y: node.position.y + dy,
-                }
-
-                if (node.position.x === nextPosition.x && node.position.y === nextPosition.y) {
-                  return node
-                }
-
-                return {
-                  ...node,
-                  position: nextPosition,
-                }
-              })
-            }
-          }
-        }
-      }
 
       if (isDraggingThisFrame) {
         const draggingIds = positionChanges
@@ -298,14 +236,14 @@ export function useWorkspaceCanvasApplyNodeChanges({
           .map(change => change.id)
         const draggedNodeIds = [...new Set(draggingIds)]
 
-        const draggedNodePositionById = new Map<string, { x: number; y: number }>()
+        const desiredDraggedPositionById = new Map<string, { x: number; y: number }>()
         for (const nodeId of draggedNodeIds) {
           const node = nextNodes.find(candidate => candidate.id === nodeId)
           if (!node) {
             continue
           }
 
-          draggedNodePositionById.set(nodeId, {
+          desiredDraggedPositionById.set(nodeId, {
             x: node.position.x,
             y: node.position.y,
           })
@@ -314,31 +252,62 @@ export function useWorkspaceCanvasApplyNodeChanges({
         const anchorNodeId =
           positionChanges.find(change => change.dragging !== false && change.position !== undefined)
             ?.id ?? draggedNodeIds[0]
-        const previousDragAnchor = anchorNodeId
-          ? (currentNodes.find(node => node.id === anchorNodeId) ?? null)
+        const baselinePositionById = dragBaselinePositionByIdRef.current
+        const baselineAnchor = baselinePositionById?.get(anchorNodeId ?? '') ?? null
+        const desiredAnchor = anchorNodeId
+          ? (desiredDraggedPositionById.get(anchorNodeId) ?? null)
           : null
-        const nextDragAnchor = anchorNodeId
-          ? (nextNodes.find(node => node.id === anchorNodeId) ?? null)
+        const dragDx = baselineAnchor && desiredAnchor ? desiredAnchor.x - baselineAnchor.x : 0
+        const dragDy = baselineAnchor && desiredAnchor ? desiredAnchor.y - baselineAnchor.y : 0
+
+        const dropFlowPoint =
+          draggedNodeIds.length === 1 &&
+          nodeDragPointerAnchorRef?.current?.nodeId === draggedNodeIds[0] &&
+          desiredDraggedPositionById.get(draggedNodeIds[0])
+            ? (() => {
+                const anchor = nodeDragPointerAnchorRef.current!
+                const desired = desiredDraggedPositionById.get(draggedNodeIds[0])!
+                return { x: desired.x + anchor.offset.x, y: desired.y + anchor.offset.y }
+              })()
+            : null
+
+        const activeSelectedSpaceIds =
+          dragSelectedSpaceIdsRef?.current ?? selectedSpaceIdsRef.current
+        const hasSelectedSpaces = activeSelectedSpaceIds.length > 0
+        const prevAnchor = anchorChange
+          ? (currentNodes.find(node => node.id === anchorChange.id) ?? null)
           : null
-        const dragDx =
-          previousDragAnchor && nextDragAnchor
-            ? nextDragAnchor.position.x - previousDragAnchor.position.x
-            : 0
-        const dragDy =
-          previousDragAnchor && nextDragAnchor
-            ? nextDragAnchor.position.y - previousDragAnchor.position.y
-            : 0
+        const anchorIsSelected = prevAnchor?.selected === true
+        const baselineSpaceRectById = dragBaselineSpaceRectByIdRef.current
 
-        const projected = projectWorkspaceNodeDragLayout({
-          nodes: nextNodes,
-          spaces: spacesRef.current,
-          draggedNodeIds,
-          draggedNodePositionById,
-          dragDx,
-          dragDy,
-        })
+        const shouldUseSpaceDominantProjection =
+          dragSpaceDominantRef.current &&
+          hasSelectedSpaces &&
+          anchorIsSelected &&
+          Boolean(baselinePositionById) &&
+          Boolean(baselineSpaceRectById) &&
+          Boolean(setSpaceFramePreview)
 
-        if (projected) {
+        if (
+          shouldUseSpaceDominantProjection &&
+          baselinePositionById &&
+          baselineSpaceRectById &&
+          setSpaceFramePreview
+        ) {
+          dragDropProjectionCacheRef.current = null
+
+          const projected = projectWorkspaceSpaceDominantLayout({
+            nodes: nextNodes,
+            spaces: spacesRef.current,
+            baselineNodePositionById: baselinePositionById,
+            baselineSpaceRectById,
+            desiredDraggedPositionById,
+            draggedNodeIds,
+            selectedSpaceIds: activeSelectedSpaceIds,
+            dragDx,
+            dragDy,
+          })
+
           nextNodes = nextNodes.map(node => {
             const nextPosition = projected.nextNodePositionById.get(node.id)
             if (!nextPosition) {
@@ -354,6 +323,75 @@ export function useWorkspaceCanvasApplyNodeChanges({
               position: nextPosition,
             }
           })
+
+          const nextPreview = projected.nextSpaceFramePreview
+          dragSpaceFramePreviewRef.current = nextPreview
+          setResolvedSpaceFramePreview(setSpaceFramePreview, nextPreview)
+        } else {
+          const baselineNodes = buildDragBaselineNodes({
+            nodes: nextNodes,
+            baselinePositionById,
+            shiftNodeIds: null,
+            shiftDx: 0,
+            shiftDy: 0,
+          })
+
+          const projected = projectWorkspaceNodeDropLayout({
+            nodes: baselineNodes,
+            spaces: spacesRef.current,
+            draggedNodeIds,
+            draggedNodePositionById: desiredDraggedPositionById,
+            dragDx,
+            dragDy,
+            dropFlowPoint,
+            previousCache: dragDropProjectionCacheRef.current,
+          })
+          dragDropProjectionCacheRef.current = projected.nextCache
+
+          nextNodes = nextNodes.map(node => {
+            const nextPosition = projected.nextNodePositionById.get(node.id)
+            if (!nextPosition) {
+              return node
+            }
+
+            if (node.position.x === nextPosition.x && node.position.y === nextPosition.y) {
+              return node
+            }
+
+            return {
+              ...node,
+              position: nextPosition,
+            }
+          })
+
+          if (setSpaceFramePreview) {
+            const currentRectsById = new Map(
+              spacesRef.current
+                .filter(space => Boolean(space.rect))
+                .map(space => [space.id, space.rect!]),
+            )
+            let hasChanged = false
+            for (const space of projected.nextSpaces) {
+              if (!space.rect) {
+                continue
+              }
+
+              if (!areSpaceRectsEqual(space.rect, currentRectsById.get(space.id) ?? null)) {
+                hasChanged = true
+                break
+              }
+            }
+
+            const nextPreview = hasChanged
+              ? new Map(
+                  projected.nextSpaces
+                    .filter(space => Boolean(space.rect))
+                    .map(space => [space.id, space.rect!] as const),
+                )
+              : null
+
+            setResolvedSpaceFramePreview(setSpaceFramePreview, nextPreview)
+          }
         }
       }
 
@@ -446,10 +484,12 @@ export function useWorkspaceCanvasApplyNodeChanges({
       nodesRef,
       normalizePosition,
       magneticSnappingEnabledRef,
+      nodeDragPointerAnchorRef,
       onNodesChange,
       onRequestPersistFlush,
       onSpacesChange,
       setSnapGuides,
+      setSpaceFramePreview,
       dragSelectedSpaceIdsRef,
       selectedSpaceIdsRef,
       spacesRef,

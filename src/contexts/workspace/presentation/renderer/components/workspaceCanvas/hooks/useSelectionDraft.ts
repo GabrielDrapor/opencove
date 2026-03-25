@@ -157,8 +157,9 @@ export function useWorkspaceCanvasSelectionDraft({
       draft.phase = 'settling'
       applyDraftSelection(draft, { forceDeselectIntersectingNodes: true })
       const hasSelectedNodes = selectedNodeIdsRef.current.length > 0
-      const shouldEnableDragSurfaceSelectionMode =
-        hasSelectedNodes && (draft.toggleSelection || !isTrackpadCanvasMode)
+      const hasSelectedSpaces = selectedSpaceIdsRef.current.length > 0
+      const hasAnySelection = hasSelectedNodes || hasSelectedSpaces
+      const shouldEnableDragSurfaceSelectionMode = hasAnySelection
       reactFlowStore.setState({
         nodesSelectionActive: hasSelectedNodes,
         coveDragSurfaceSelectionMode: shouldEnableDragSurfaceSelectionMode,
@@ -182,7 +183,6 @@ export function useWorkspaceCanvasSelectionDraft({
     [
       applyDraftSelection,
       detachGlobalPointerListeners,
-      isTrackpadCanvasMode,
       reactFlowStore,
       selectionDraftRef,
       selectedNodeIdsRef,
