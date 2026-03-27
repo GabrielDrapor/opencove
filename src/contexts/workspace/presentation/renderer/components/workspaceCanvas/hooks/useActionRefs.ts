@@ -108,6 +108,7 @@ interface SyncActionRefsParams {
   updateTerminalTitle: (nodeId: string, title: string) => void
   renameTerminalTitle: (nodeId: string, title: string) => void
   focusNodeOnClick: boolean
+  focusNodeAutoZoom: boolean
   focusNodeTargetZoom: number
   nodesRef: React.MutableRefObject<Node<TerminalNodeData>[]>
   reactFlow: ReactFlowInstance<Node<TerminalNodeData>>
@@ -124,6 +125,7 @@ export function useWorkspaceCanvasSyncActionRefs({
   updateTerminalTitle,
   renameTerminalTitle,
   focusNodeOnClick,
+  focusNodeAutoZoom,
   focusNodeTargetZoom,
   nodesRef,
   reactFlow,
@@ -179,10 +181,14 @@ export function useWorkspaceCanvasSyncActionRefs({
         return
       }
 
-      focusNodeInViewport(reactFlow, targetNode, { duration: 120, zoom: focusNodeTargetZoom })
+      focusNodeInViewport(reactFlow, targetNode, {
+        duration: 120,
+        zoom: focusNodeAutoZoom ? focusNodeTargetZoom : reactFlow.getZoom(),
+      })
     }
   }, [
     actionRefs.normalizeViewportForTerminalInteractionRef,
+    focusNodeAutoZoom,
     focusNodeOnClick,
     focusNodeTargetZoom,
     nodesRef,

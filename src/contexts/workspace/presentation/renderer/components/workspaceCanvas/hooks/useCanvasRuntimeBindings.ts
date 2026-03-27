@@ -14,6 +14,7 @@ export function useWorkspaceCanvasRuntimeBindings({
   updateTerminalTitle,
   renameTerminalTitle,
   focusNodeOnClick,
+  focusNodeAutoZoom,
   focusNodeTargetZoom,
   nodesRef,
   reactFlow,
@@ -34,6 +35,7 @@ export function useWorkspaceCanvasRuntimeBindings({
   updateTerminalTitle: Parameters<typeof useWorkspaceCanvasSyncActionRefs>[0]['updateTerminalTitle']
   renameTerminalTitle: Parameters<typeof useWorkspaceCanvasSyncActionRefs>[0]['renameTerminalTitle']
   focusNodeOnClick: Parameters<typeof useWorkspaceCanvasSyncActionRefs>[0]['focusNodeOnClick']
+  focusNodeAutoZoom: Parameters<typeof useWorkspaceCanvasSyncActionRefs>[0]['focusNodeAutoZoom']
   focusNodeTargetZoom: Parameters<typeof useWorkspaceCanvasSyncActionRefs>[0]['focusNodeTargetZoom']
   nodesRef: Parameters<typeof useWorkspaceCanvasAgentLastMessageCopy>[0]['nodesRef']
   reactFlow: Parameters<typeof useWorkspaceCanvasSyncActionRefs>[0]['reactFlow']
@@ -57,6 +59,7 @@ export function useWorkspaceCanvasRuntimeBindings({
     updateTerminalTitle,
     renameTerminalTitle,
     focusNodeOnClick,
+    focusNodeAutoZoom,
     focusNodeTargetZoom,
     nodesRef,
     reactFlow,

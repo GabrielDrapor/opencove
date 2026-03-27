@@ -21,6 +21,7 @@ export function CanvasSection(props: {
   canvasInputMode: CanvasInputMode
   standardWindowSizeBucket: StandardWindowSizeBucket
   focusNodeOnClick: boolean
+  focusNodeAutoZoom: boolean
   focusNodeTargetZoom: FocusNodeTargetZoom
   defaultTerminalProfileId: string | null
   terminalProfiles: TerminalProfile[]
@@ -29,6 +30,7 @@ export function CanvasSection(props: {
   onChangeStandardWindowSizeBucket: (bucket: StandardWindowSizeBucket) => void
   onChangeDefaultTerminalProfileId: (profileId: string | null) => void
   onChangeFocusNodeOnClick: (enabled: boolean) => void
+  onChangeFocusNodeAutoZoom: (enabled: boolean) => void
   onChangeFocusNodeTargetZoom: (zoom: FocusNodeTargetZoom) => void
   onFocusNodeTargetZoomPreviewChange: (isPreviewing: boolean) => void
 }): React.JSX.Element {
@@ -37,6 +39,7 @@ export function CanvasSection(props: {
     canvasInputMode,
     standardWindowSizeBucket,
     focusNodeOnClick,
+    focusNodeAutoZoom,
     focusNodeTargetZoom,
     defaultTerminalProfileId,
     terminalProfiles,
@@ -45,6 +48,7 @@ export function CanvasSection(props: {
     onChangeStandardWindowSizeBucket,
     onChangeDefaultTerminalProfileId,
     onChangeFocusNodeOnClick,
+    onChangeFocusNodeAutoZoom,
     onChangeFocusNodeTargetZoom,
     onFocusNodeTargetZoomPreviewChange,
   } = props
@@ -166,6 +170,25 @@ export function CanvasSection(props: {
         </div>
       </div>
 
+      <div className="settings-panel__row">
+        <div className="settings-panel__row-label">
+          <strong>{t('settingsPanel.canvas.focusAutoZoomLabel')}</strong>
+          <span>{t('settingsPanel.canvas.focusAutoZoomHelp')}</span>
+        </div>
+        <div className="settings-panel__control">
+          <label className="cove-toggle">
+            <input
+              type="checkbox"
+              data-testid="settings-focus-node-auto-zoom"
+              checked={focusNodeAutoZoom}
+              disabled={!focusNodeOnClick}
+              onChange={event => onChangeFocusNodeAutoZoom(event.target.checked)}
+            />
+            <span className="cove-toggle__slider"></span>
+          </label>
+        </div>
+      </div>
+
       <div className="settings-panel__row settings-panel__row--focus-target-zoom">
         <div className="settings-panel__row-label">
           <strong>{t('settingsPanel.canvas.focusTargetZoomLabel')}</strong>
@@ -180,7 +203,7 @@ export function CanvasSection(props: {
               id="settings-focus-node-target-zoom"
               data-testid="settings-focus-node-target-zoom"
               value={focusNodeTargetZoom}
-              disabled={!focusNodeOnClick}
+              disabled={!focusNodeOnClick || !focusNodeAutoZoom}
               type="range"
               min={MIN_FOCUS_NODE_TARGET_ZOOM}
               max={MAX_FOCUS_NODE_TARGET_ZOOM}

@@ -39,6 +39,7 @@ interface UseWorkspaceCanvasInteractionsParams {
   canvasRef: React.RefObject<HTMLDivElement | null>
   isTrackpadCanvasMode: boolean
   focusNodeOnClick: boolean
+  focusNodeAutoZoom: boolean
   focusNodeTargetZoom: number
   isShiftPressedRef: React.MutableRefObject<boolean>
   selectionDraftRef: React.MutableRefObject<SelectionDraftState | null>
@@ -81,6 +82,7 @@ export function useWorkspaceCanvasInteractions({
   canvasRef,
   isTrackpadCanvasMode,
   focusNodeOnClick,
+  focusNodeAutoZoom,
   focusNodeTargetZoom,
   isShiftPressedRef,
   selectionDraftRef,
@@ -197,9 +199,12 @@ export function useWorkspaceCanvasInteractions({
         return
       }
 
-      focusNodeInViewport(reactFlow, node, { duration: 120, zoom: focusNodeTargetZoom })
+      focusNodeInViewport(reactFlow, node, {
+        duration: 120,
+        zoom: focusNodeAutoZoom ? focusNodeTargetZoom : reactFlow.getZoom(),
+      })
     },
-    [focusNodeOnClick, focusNodeTargetZoom, reactFlow],
+    [focusNodeAutoZoom, focusNodeOnClick, focusNodeTargetZoom, reactFlow],
   )
 
   const handleNodeContextMenu = useCallback(

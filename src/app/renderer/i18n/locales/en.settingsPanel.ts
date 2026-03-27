@@ -108,6 +108,8 @@ export const enSettingsPanel = {
     },
     focusOnClickLabel: 'Auto-focus on Click',
     focusOnClickHelp: 'Center the canvas on a node when it is clicked.',
+    focusAutoZoomLabel: 'Auto-zoom on Focus',
+    focusAutoZoomHelp: 'Adjust zoom level when auto-focusing a node. When off, only pans without changing zoom.',
     focusTargetZoomLabel: 'Target Zoom',
     focusTargetZoomHelp:
       'Zoom level used after auto-focus. Drag the slider to preview while adjusting.',

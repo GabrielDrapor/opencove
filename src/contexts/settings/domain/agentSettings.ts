@@ -108,6 +108,7 @@ export interface AgentSettings {
   taskPromptTemplates: TaskPromptTemplate[]
   taskPromptTemplatesByWorkspaceId: TaskPromptTemplatesByWorkspaceId
   focusNodeOnClick: boolean
+  focusNodeAutoZoom: boolean
   focusNodeTargetZoom: FocusNodeTargetZoom
   standbyBannerEnabled: boolean
   standbyBannerShowTask: boolean
@@ -161,6 +162,7 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
   taskPromptTemplates: [],
   taskPromptTemplatesByWorkspaceId: {},
   focusNodeOnClick: true,
+  focusNodeAutoZoom: true,
   focusNodeTargetZoom: 1,
   standbyBannerEnabled: true,
   standbyBannerShowTask: true,
@@ -384,6 +386,8 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
     normalizeBoolean(value.focusNodeOnClick) ??
     normalizeBoolean(value.normalizeZoomOnTerminalClick) ??
     DEFAULT_AGENT_SETTINGS.focusNodeOnClick
+  const focusNodeAutoZoom =
+    normalizeBoolean(value.focusNodeAutoZoom) ?? DEFAULT_AGENT_SETTINGS.focusNodeAutoZoom
   const focusNodeTargetZoom = normalizeFocusNodeTargetZoom(
     value.focusNodeTargetZoom,
     DEFAULT_AGENT_SETTINGS.focusNodeTargetZoom,
@@ -475,6 +479,7 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
     taskPromptTemplates,
     taskPromptTemplatesByWorkspaceId,
     focusNodeOnClick,
+    focusNodeAutoZoom,
     focusNodeTargetZoom,
     standbyBannerEnabled,
     standbyBannerShowTask,
